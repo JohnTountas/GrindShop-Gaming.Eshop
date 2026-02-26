@@ -1,48 +1,20 @@
-# GamerSpot - Gaming eShop
+# GamerSpot: Gaming eShop
 
-GamerSpot is a full-stack gaming e-commerce platform built as a monorepo with:
+Full-stack gaming e-commerce platform built as a production-style monorepo.
 
-- React + TypeScript frontend -
-- Express + TypeScript backend -
-- PostgreSQL database via Prisma ORM -
+This repository demonstrates end-to-end web development skills across product design, API architecture, database modeling, authentication, admin tooling, and deployment workflows.
 
-The project includes customer shopping flows (catalog, cart, checkout, orders) and admin operations (order status and catalog content management).
+## Executive Summary
 
----
+GamerSpot is a complete storefront application with:
 
-## Default Accounts
+- Customer features: Authentication, Catalog browsing, Product detail, Cart, Checkout, Orders, Wishlist, Compare
+- Admin features: Order status operations, Product content management (specifications and reviews), Protected admin dashboard
+- Engineering focus: Modular backend architecture, Typed frontend/backend contracts, Secure auth flow, CI Automation, Docker-based local orchestration.
 
-After `npm run database`:
+## Technology Stack
 
-### YOU CAN LOGIN WITH THE CREDENTIALS BELOW:
-
-- Admin: `admin@gamerspot.com` / `admin123`
-- User: `user@gamerspot.com` / `user123`
-
----
-
-## Project Scope
-
-### Customer-facing features
-
-- Account registration/login with JWT access tokens and refresh-token cookies
-- Product catalog with search, filtering, sorting, and pagination
-- Product detail pages with specifications and reviews
-- Cart management (add/update/remove/clear)
-- Checkout with shipping form and multi-option payment confirmation UI
-- Order history and order detail views
-- Wishlist and product comparison flows
-
-### Admin-facing features
-
-- Admin dashboard route protection
-- Product CRUD (create, update, delete)
-- Order status management (`PENDING`, `PAID`, `SHIPPED`, `CANCELLED`)
-- Product specification and review management via admin catalog endpoints
-
-## Technologies Used
-
-### Frontend
+### Frontend.
 
 - React 18
 - TypeScript
@@ -52,133 +24,201 @@ After `npm run database`:
 - Axios
 - Tailwind CSS
 
-### Backend
+### Backend.
 
 - Node.js 20
 - Express 4
 - TypeScript
 - Prisma ORM
-- PostgreSQL
+- PostgreSQL 16
 - Zod validation
-- JWT auth (`jsonwebtoken`)
+- JSON Web Tokens (`jsonwebtoken`)
 - Security middleware: `helmet`, `cors`, `cookie-parser`
-- Rate limiting with `express-rate-limit`
-- Swagger docs with `swagger-jsdoc` + `swagger-ui-express`
-- Logging with `morgan` and `winston`
+- Rate limiting: `express-rate-limit`
+- API docs: `swagger-jsdoc`, `swagger-ui-express`
+- Logging: `morgan`, `winston`
 
-### Tooling and DevOps
+### Tooling and DevOps.
 
-- Docker + Docker Compose
+- Docker and Docker Compose
 - GitHub Actions CI (`.github/workflows/ci.yml`)
 - ESLint
-- Jest (backend), Vitest (frontend) toolchains configured
+- TypeScript strict mode
+- Jest (backend) and Vitest (frontend) test tooling
 
-## Architecture Overview
+## What Is Implemented:
+
+### Customer Experience.
+
+- Account registration and login
+- Access token + refresh token flow
+- Product listing with search, category, sorting, price, and pagination support
+- Product detail with technical specifications and reviews
+- Cart item add, update, remove, and clear
+- Checkout shipping capture and payment-method confirmation UX
+- Order creation and order history
+- Wishlist and compare list management
+
+### Admin Experience.
+
+- Admin-protected route access
+- Order lifecycle management (`PENDING`, `PAID`, `SHIPPED`, `CANCELLED`)
+- Product content operations for:
+  - technical specifications
+  - customer review entries
+- Backend product CRUD endpoints
+
+## Architecture Overview.
 
 ```text
 gamerspot/
 |- backend/
-|  |- prisma/                 # Prisma schema + seed script
+|  |- prisma/
 |  |- src/
-|  |  |- config/              # env and db config
-|  |  |- middleware/          # auth, validation, error, rate limiting
+|  |  |- config/
+|  |  |- middleware/
 |  |  |- modules/
 |  |  |  |- auth/
 |  |  |  |- products/
 |  |  |  |- categories/
 |  |  |  |- cart/
 |  |  |  |- orders/
+|  |  |  |- compare_wishlist/
 |  |  |  |- adminCatalog/
-|  |  |  |- me/               # wishlist/compare storefront state
-|  |  |- app.ts               # express app wiring
-|  |  |- server.ts            # bootstrap + db connection retry
+|  |  |- app.ts
+|  |  |- server.ts
 |- frontend/
-|  |- public/                 # product images
+|  |- public/
 |  |- src/
-|  |  |- components/
-|  |  |- features/
-|  |  |- lib/
-|  |  |- types/
-|  |- vite.config.ts
 |- docker-compose.yml
 |- README.md
 ```
 
-## API Surface (High-Level)
+## Backend Module Map.
 
 Base path: `/api`
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `POST /auth/refresh`
-- `POST /auth/logout`
-- `GET /auth/me`
-- `GET /products`
-- `GET /products/:id`
-- `POST /products` (admin)
-- `PATCH /products/:id` (admin)
-- `DELETE /products/:id` (admin)
-- `GET /categories`
-- `GET /cart`
-- `POST /cart/items`
-- `PATCH /cart/items/:itemId`
-- `DELETE /cart/items/:itemId`
-- `DELETE /cart`
-- `POST /orders`
-- `GET /orders`
-- `GET /orders/:id`
-- `GET /admin/orders` (admin)
-- `PATCH /admin/orders/:id/status` (admin)
-- `GET /admin/catalog/products` (admin)
-- `GET /admin/catalog/products/:productId/content` (admin)
-- `POST /admin/catalog/products/:productId/specifications` (admin)
-- `PATCH /admin/catalog/specifications/:specificationId` (admin)
-- `DELETE /admin/catalog/specifications/:specificationId` (admin)
-- `POST /admin/catalog/products/:productId/reviews` (admin)
-- `PATCH /admin/catalog/reviews/:reviewId` (admin)
-- `DELETE /admin/catalog/reviews/:reviewId` (admin)
-- `GET /me/storefront`
-- `GET /me/wishlist`
-- `POST /me/wishlist/toggle`
-- `POST /me/compare/toggle`
-- `DELETE /me/compare`
+- Auth module: `/auth/*`
+- Product module: `/products*`
+- Category module: `/categories`
+- Cart module: `/cart*`
+- Order module: `/orders*`
+- Admin order module: `/admin/orders*`
+- Admin catalog module: `/admin/catalog*`
+- Storefront state module: `/me*` (wishlist and compare)
 
-Swagger UI: `/docs`
+Additional routes:
 
-## Data Model (Core)
+- Health check: `/health`
+- Swagger docs: `/docs`
 
-Prisma models include:
+## API Surface (High-Level)
 
-- `User` (roles: `USER`, `ADMIN`)
+### Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+### Catalog and commerce.
+
+- `GET /api/products`
+- `GET /api/products/:id`
+- `GET /api/categories`
+- `GET /api/cart`
+- `POST /api/cart/items`
+- `PATCH /api/cart/items/:itemId`
+- `DELETE /api/cart/items/:itemId`
+- `DELETE /api/cart`
+- `POST /api/orders`
+- `GET /api/orders`
+- `GET /api/orders/:id`
+
+### Admin
+
+- `GET /api/admin/orders`
+- `PATCH /api/admin/orders/:id/status`
+- `GET /api/admin/catalog/products`
+- `GET /api/admin/catalog/products/:productId/content`
+- `POST /api/admin/catalog/products/:productId/specifications`
+- `PATCH /api/admin/catalog/specifications/:specificationId`
+- `DELETE /api/admin/catalog/specifications/:specificationId`
+- `POST /api/admin/catalog/products/:productId/reviews`
+- `PATCH /api/admin/catalog/reviews/:reviewId`
+- `DELETE /api/admin/catalog/reviews/:reviewId`
+
+### Storefront state.
+
+- `GET /api/me/storefront`
+- `GET /api/me/wishlist`
+- `POST /api/me/wishlist/toggle`
+- `POST /api/me/compare/toggle`
+- `DELETE /api/me/compare`
+
+## Data Model.
+
+Core Prisma models:
+
+- `User`, `Role`
 - `Category`
 - `Product`
 - `ProductSpecification`
 - `ProductReview`
 - `Cart`, `CartItem`
-- `Order`, `OrderItem`
+- `Order`, `OrderItem`, `OrderStatus`
 - `WishlistItem`, `CompareItem`
 - `LoyaltyProfile`
 
-## Setup and Run
+## Frontend Implementation Highlights.
 
-### Prerequisites
+- Route-based application composition with protected and admin-only routes
+- API client with automatic auth header injection
+- Automatic refresh-token retry strategy on 401 responses
+- Storefront hooks for wishlist/compare behavior
+- Guest compare fallback in localStorage
+- Rich checkout validation for shipping and payment method inputs
+- Feature-oriented page modules for product, order, cart, checkout, wishlist, and admin flows
 
-- Node.js 20+
-- npm
-- Docker Desktop (for Docker flow)
-- PostgreSQL 16+ (for local non-Docker flow)
+## Security and Reliability Practices.
 
-### Option A: Docker Compose (Recommended)
+- Role-based authorization middleware (`USER` / `ADMIN`)
+- Request schema validation with Zod
+- Auth endpoint rate limiting
+- Centralized error middleware with Prisma-aware error handling
+- DB startup retry handling in backend bootstrap
+- CORS and cookie handling configured for refresh token flow
 
-From project root:
+## CI and Quality Controls.
+
+GitHub Actions pipeline includes:
+
+- Backend: install, lint, type-check, migrate, test
+- Frontend: install, lint, type-check, build, test
+
+Local quality commands:
+
+```bash
+# Backend
+cd backend
+npm run lint
+npm run type-check
+npm run build
+
+# Frontend
+cd frontend
+npm run lint
+npm run type-check
+npm run build
+```
+
+## Quick Start instruction:
+
+### Option A: Full Docker
 
 ```bash
 docker-compose up --build
-```
-
-In another terminal, run migrations and seed:
-
-```bash
 docker-compose exec backend npx prisma migrate deploy
 docker-compose exec backend npm run database
 ```
@@ -186,109 +226,85 @@ docker-compose exec backend npm run database
 Access:
 
 - Frontend: `http://localhost:3000`
-- Backend API (docker mapping): `http://localhost:5050`
+- Backend: `http://localhost:5050`
 - API docs: `http://localhost:5050/docs`
 
-### Option B: Local Development
-
-### 1) Backend
+### Option B: Local app processes + PostgreSQL
 
 ```bash
-cd backend
-npm install
-cp .env.example .env
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-Update `.env` as needed, then:
+Create `backend/.env`:
 
-```bash
-npx prisma migrate deploy
-npm run database
-npm run dev
+```env
+DATABASE_URL=postgresql://gamerspot:gamerspot_password@localhost:5432/gamerspot
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+PORT=5000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+MAX_FILE_SIZE=5242880
+UPLOAD_DIR=uploads
 ```
 
-Backend local URL: `http://localhost:5000`
-
-### 2) Frontend
-
-Create `frontend/.env` (if missing) with:
+Create `frontend/.env`:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_STRIPE_PUBLIC_KEY=pk_test_your_stripe_public_key
 ```
 
-Then run:
+Run:
 
 ```bash
-cd frontend
-npm install
+docker-compose up -d postgres
+cd backend
+npx prisma migrate deploy
+npm run database
+npm run dev
+
+cd ../frontend
 npm run dev
 ```
 
-Frontend local URL: `http://localhost:3000`
+Access:
 
-## Environment Variables
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:5000`
+- API docs: `http://localhost:5000/docs`
 
-### Backend (`backend/.env`)
+## Default Accounts
 
-Required/important keys:
+After `npm run database`:
 
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `JWT_REFRESH_SECRET`
-- `JWT_EXPIRES_IN`
-- `JWT_REFRESH_EXPIRES_IN`
-- `PORT` (default `5000`)
-- `NODE_ENV`
-- `CORS_ORIGIN`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `MAX_FILE_SIZE`
-- `UPLOAD_DIR`
+YOU CAN LOGIN WITH THE CREDENTIALS BELOW:
 
-Optional runtime tuning from `server.ts`:
+- Admin: `admin@gamerspot.com` / `admin123`
+- User: `user@gamerspot.com` / `user123`
 
-- `PORT_RETRY_ATTEMPTS`
-- `DB_CONNECT_MAX_RETRIES`
-- `DB_CONNECT_RETRY_DELAY_MS`
+## Engineering Competencies Demonstrated.
 
-### Frontend (`frontend/.env`)
+This project showcases my personal skills relevant to software engineer/web developer roles:
 
-- `VITE_API_URL`
-- `VITE_STRIPE_PUBLIC_KEY`
+- Full-stack feature ownership from UI to database
+- API design and modular service/controller architecture
+- Authentication and authorization implementation
+- State management and async data handling in React
+- Relational modeling and ORM usage with Prisma
+- Validation, error handling, and middleware composition
+- Dockerized local environments and CI pipeline integration
+- Maintainable TypeScript code organization in a monorepo
 
-## NPM Scripts
+## Current Limitations
 
-### Backend (`backend/package.json`)
+- Checkout sends `paymentIntentId`, but backend payment orchestration is NOT implemented yet.
 
-- `npm run dev`
-- `npm run build`
-- `npm start`
-- `npm run migrate`
-- `npm run migrate:deploy`
-- `npm run database`
-- `npm run studio`
-- `npm run lint`
-- `npm run type-check`
-- `npm test`
+## Project Goal
 
-### Frontend (`frontend/package.json`)
-
-- `npm run dev`
-- `npm run build`
-- `npm run preview`
-- `npm run lint`
-- `npm run type-check`
-- `npm test`
-
-## Quality Notes
-
-- CI is configured for backend and frontend in GitHub Actions.
-- Linting/type-check/build workflows are in place.
-- Test toolchains are configured; currently, this repository may contain zero backend test files.
-
-## Payment Note
-
-The checkout UI supports multiple payment options and sends a `paymentIntentId`-style token field.  
-Backend Stripe wiring is partially prepared (env keys + DTO field), but full server-side Stripe payment processing is NOT fully implemented yet.!
+GamerSpot is designed as a portfolio-project, production-style codebase that demonstrates not only implementation ability, but also architecture clarity, maintainability, and delivery discipline expected in professional software teams.
