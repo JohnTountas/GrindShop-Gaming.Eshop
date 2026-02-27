@@ -6,7 +6,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { clearSession, getStoredUser, isAuthenticated } from "@/lib/auth/session";
 import { useWishlist } from "@/lib/gaming/storefront";
 import ToastHost from "@/components/feedback/ToastHost";
-import { BRAND_NAME, BRAND_POSITIONING, BRAND_TAGLINE } from "@/lib/brand/identity";
+import { BRAND_LOGO_SRC, BRAND_NAME, BRAND_POSITIONING, BRAND_TAGLINE } from "@/lib/brand/identity";
 import { showSuccessMessage } from "@/lib/ui/toast";
 
 const FOOTER_MESSAGE_EVENT = "grindspot:open-footer-message";
@@ -207,16 +207,13 @@ function Layout() {
                 onClick={scrollToPageStart}
                 className="group inline-flex items-center gap-3 text-primary-900"
               >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-accent-700/65 bg-primary-100 text-2xl font-black leading-none text-accent-700 shadow-neon">
-                  GS
-                </span>
-                <span>
-                  <span className="block font-display text-3xl font-bold leading-none tracking-[0.1em]">
-                    {BRAND_NAME}
-                  </span>
-                  <span className="block text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-accent-700">
-                    {BRAND_TAGLINE}
-                  </span>
+                <img
+                  src={BRAND_LOGO_SRC}
+                  alt={`${BRAND_NAME} logo`}
+                  className="h-12 w-auto max-w-[200px] object-contain"
+                />
+                <span className="block text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-accent-700">
+                  {BRAND_TAGLINE}
                 </span>
               </NavLink>
 
@@ -301,9 +298,11 @@ function Layout() {
         <div className="container space-y-8">
           <div className="grid gap-8 md:grid-cols-3">
             <section>
-              <h2 className="font-display text-2xl font-bold tracking-[0.08em] text-primary-900">
-                {BRAND_NAME}
-              </h2>
+              <img
+                src={BRAND_LOGO_SRC}
+                alt={`${BRAND_NAME} logo`}
+                className="h-14 w-auto max-w-full object-contain object-left"
+              />
               <p className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-accent-700">
                 {BRAND_TAGLINE}
               </p>

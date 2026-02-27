@@ -45,9 +45,9 @@
       );
     background-attachment: fixed;
     font-feature-settings:
-      'rlig' 1,
-      'calt' 1;
-    font-family: 'Space Grotesk', 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+      "rlig" 1,
+      "calt" 1;
+    font-family: "Space Grotesk", "Rajdhani", "Segoe UI", system-ui, sans-serif;
     color: var(--app-text);
     caret-color: transparent;
   }
@@ -78,7 +78,7 @@
 
   input,
   textarea,
-  [contenteditable='true'] {
+  [contenteditable="true"] {
     caret-color: auto;
   }
 
@@ -201,6 +201,7 @@
       0 0 10px rgba(46, 123, 255, 0.32),
       0 0 16px rgba(29, 242, 255, 0.2);
   }
+
 }
 
 @layer utilities {

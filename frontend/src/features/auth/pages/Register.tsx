@@ -69,7 +69,7 @@ function Register() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-700">
           Create account
         </p>
-        <h1 className="mt-2 font-display text-4xl font-bold tracking-[0.08em] text-primary-900">
+        <h1 className="mt-2 font-sans text-4xl font-semibold tracking-[0.04em] text-primary-900">
           Join {BRAND_NAME}
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-primary-600">
@@ -154,7 +154,7 @@ function Register() {
         </form>
 
         <p className="mt-4 text-sm text-primary-600">
-          Already have an account?
+          Already have an account?&nbsp;
           <Link to="/login" className="font-semibold text-accent-700 hover:text-accent-600">
             Sign in
           </Link>

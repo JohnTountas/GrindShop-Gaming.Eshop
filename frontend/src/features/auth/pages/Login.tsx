@@ -1,55 +1,55 @@
 /**
  * Premium login experience aligned with the gaming storefront visual language.
  */
-import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '@/lib/api/client';
-import { AuthResponse } from '@/types';
-import { getApiErrorMessage } from '@/lib/api/error';
-import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/brand/identity';
-import { showSuccessMessage } from '@/lib/ui/toast';
+import { FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "@/lib/api/client";
+import { AuthResponse } from "@/types";
+import { getApiErrorMessage } from "@/lib/api/error";
+import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand/identity";
+import { showSuccessMessage } from "@/lib/ui/toast";
 
 // Derives a friendly display name for login success feedback.
-function getLoginUsername(user: AuthResponse['user']): string {
+function getLoginUsername(user: AuthResponse["user"]): string {
   const fullName = [user.firstName, user.lastName]
     .filter((value): value is string => Boolean(value?.trim()))
-    .join(' ')
+    .join(" ")
     .trim();
 
   if (fullName) {
     return fullName;
   }
 
-  const emailPrefix = user.email.split('@')[0]?.trim();
+  const emailPrefix = user.email.split("@")[0]?.trim();
   return emailPrefix || user.email;
 }
 
 // Handles authentication form state, login API calls, and post-login navigation.
 function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Submits login credentials, persists session tokens, and routes on success.
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
-    setErrorMessage('');
+    setErrorMessage("");
 
     try {
-      const response = await api.post<AuthResponse>('/auth/login', { email, password });
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      const response = await api.post<AuthResponse>("/auth/login", { email, password });
+      localStorage.setItem("accessToken", response.data.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
       showSuccessMessage({
-        title: 'Login successful',
+        title: "Login successful",
         message: `Welcome back, ${getLoginUsername(response.data.user)}!`,
-        tone: 'success',
+        tone: "success",
       });
-      navigate('/');
+      navigate("/");
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Login failed'));
+      setErrorMessage(getApiErrorMessage(error, "Login failed"));
     } finally {
       setSubmitting(false);
     }
@@ -70,7 +70,7 @@ function Login() {
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-700">
             Member Access
           </p>
-          <h1 className="mt-2 font-display text-4xl font-bold tracking-[0.08em] text-primary-900">
+          <h1 className="mt-2 font-sans text-4xl font-semibold tracking-[0.04em] text-primary-900">
             {BRAND_NAME}
           </h1>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-600">
@@ -130,12 +130,12 @@ function Login() {
             disabled={submitting}
             className="inline-flex w-full items-center justify-center rounded-xl bg-primary-800 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-white shadow-neon hover:bg-primary-500 disabled:opacity-60"
           >
-            {submitting ? 'Signing in...' : 'Sign in'}
+            {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
         <p className="mt-4 text-sm text-primary-600">
-          No account?{' '}
+          You dont have an account yet?&nbsp;
           <Link to="/register" className="font-semibold text-accent-700 hover:text-accent-600">
             Register
           </Link>
