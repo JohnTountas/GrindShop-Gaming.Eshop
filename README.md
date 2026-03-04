@@ -223,9 +223,9 @@ All URLs of the project:
 
 ##
 
-### Instructions for local setup (Step-by-step) !!!
+## Instructions for local setup (Step-by-step) !!!
 
-## -------------------------------- WAY 1: --------------------------------
+### -------------------------------- WAY 1: --------------------------------
 
 ### Prerequisites
 
