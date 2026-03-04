@@ -340,7 +340,7 @@ This project showcases my personal skills relevant to software engineer/web deve
 
 ## Current Limitations
 
-- Checkout sends `paymentIntentId`, but backend payment orchestration is NOT implemented yet.
+- Checkout sends `paymentIntentId`, but backend payment orchestration is NOT implemented yet. !
 
 ## Project Goal
 
