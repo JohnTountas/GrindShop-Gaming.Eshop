@@ -305,10 +305,16 @@ Frontend URL:
 ### Optional: Full Docker mode (frontend + backend + postgres)
 
 ```bash
+# Run this once if you had older volumes/config and want a clean DB bootstrap. (OPTIONAL)
+docker-compose down -v
+
 docker-compose up --build
-docker-compose exec backend npx prisma migrate deploy
-docker-compose exec backend npm run database
 ```
+
+`backend` container startup now:
+
+- runs `prisma migrate deploy`
+- seeds database automatically on first run when catalog is empty (`AUTO_SEED=true` in compose)
 
 Docker URLs:
 
@@ -318,12 +324,16 @@ Docker URLs:
 
 ## Default Accounts
 
-After `npm run database`:
+After seeding (automatic in Docker, or manual via `npm run database` in local mode):
 
-YOU CAN LOGIN WITH THE CREDENTIALS BELOW:
+### YOU CAN LOGIN WITH THE CREDENTIALS BELOW:
+
+### ----------------------------------------------------------
 
 - Admin: `admin@grindspot.com` / `admin123`
 - User: `user@grindspot.com` / `user123`
+
+### ----------------------------------------------------------
 
 ## Engineering Competencies Demonstrated.
 
