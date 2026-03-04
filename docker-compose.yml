@@ -39,7 +39,7 @@ services:
       CORS_ORIGIN: http://localhost:3000
       STRIPE_SECRET_KEY: sk_test_your_stripe_secret_key
     ports:
-      - "5050:5000"
+      - "5000:5000"
     volumes:
       - ./backend/uploads:/app/uploads
 
@@ -48,7 +48,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:5050/api
+        VITE_API_URL: http://localhost:5000/api
         VITE_STRIPE_PUBLIC_KEY: pk_test_your_stripe_public_key
     container_name: grindspot-frontend
     restart: unless-stopped

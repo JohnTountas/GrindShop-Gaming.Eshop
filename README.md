@@ -1,4 +1,4 @@
-# Project: GrindSpot - Gaming eShop
+# Project: GrindSpot - Gaming Eshop
 
 A Full-stack gaming e-commerce platform built as a production-style monorepo.
 
@@ -213,7 +213,17 @@ npm run type-check
 npm run build
 ```
 
+All URLs of the project:
+
+- API root: `http://localhost:5000` -> Shows the root of all API-endpoints.
+- Swagger docs: `http://localhost:5000/docs` -> Verifies auth/cart/orders routes are listed.
+- Health endpoint: `http://localhost:5000/health` -> Confirm status if status: `ok`.
+- Database UI URL: `http://localhost:5555` -> Renders the Database's UI.
+- Frontend URL: `http://localhost:3000` -> Renders the whole FrontPage.
+
 ## Instructions for local setup (Step-by-step) !!!
+
+## -------------------------------- WAY 1: --------------------------------
 
 ### Prerequisites
 
@@ -256,15 +266,22 @@ VITE_API_URL=http://localhost:5000/api
 VITE_STRIPE_PUBLIC_KEY=pk_test_your_stripe_public_key
 ```
 
+If you run backend through Docker Compose (host port `5050`), use:
+
+```env
+VITE_API_URL=http://localhost:5050/api
+VITE_STRIPE_PUBLIC_KEY=pk_test_your_stripe_public_key
+```
+
 ### Step 3: Start PostgreSQL - (You will need to install Docker first)
 
 #### On Docker's terminal:
 
 ```bash
-docker-compose up -d postgres
+docker compose up -d postgres
 ```
 
-### Step 4: Run Prisma migrations and seed data
+### Step 4: Run Prisma migrations and seed data into database.
 
 ```bash
 cd backend
@@ -272,61 +289,36 @@ npx prisma migrate deploy
 npm run database
 ```
 
-### Step 5: Start backend API - (In a terminal)
+### Step 5: Open database UI (Prisma Studio) - (Optional)
+
+```bash
+cd backend
+npm run studio
+### Database will start automatically at: `http://localhost:5555`
+```
+
+### Step 6: Start backend API - (In a terminal)
 
 ```bash
 cd backend
 npm run dev
+
 ```
 
-Backend URLs:
-
-- API root: `http://localhost:5000`
-- Swagger docs: `http://localhost:5000/docs`
-- Health endpoint: `http://localhost:5000/health`
-
-### Step 6: Start frontend app - (In a new terminal)
+### Step 7: Start frontend app - (In a new terminal)
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Frontend URL:
+##
 
-- `http://localhost:3000`
+##
 
-### Step 7: Verify the stack is healthy - (Optional but Important)!
+## Default Accounts:
 
-- Open `http://localhost:5000/health` and confirm status `ok`.
-- Open `http://localhost:5000/docs` and verify auth/cart/orders routes are listed.
-- Open `http://localhost:3000` and confirm product catalog renders.
-
-### Optional: Full Docker mode (frontend + backend + postgres)
-
-```bash
-# Run this once if you had older volumes/config and want a clean DB bootstrap. (OPTIONAL)
-docker-compose down -v
-
-docker-compose up --build
-```
-
-`backend` container startup now:
-
-- runs `prisma migrate deploy`
-- seeds database automatically on first run when catalog is empty (`AUTO_SEED=true` in compose)
-
-Docker URLs:
-
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:5050`
-- Swagger docs: `http://localhost:5050/docs`
-
-## Default Accounts
-
-After seeding (automatic in Docker, or manual via `npm run database` in local mode):
-
-### YOU CAN LOGIN WITH THE CREDENTIALS BELOW:
+### YOU CAN LOGIN WITH THE CREDENTIALS BELOW IF YOU WANT:
 
 ### ----------------------------------------------------------
 
@@ -334,6 +326,32 @@ After seeding (automatic in Docker, or manual via `npm run database` in local mo
 - User: `user@grindspot.com` / `user123`
 
 ### ----------------------------------------------------------
+
+##
+
+##
+
+## -------------------------------- WAY 2: --------------------------------
+
+### Full Docker mode (frontend + backend + postgres)
+
+```bash
+# Run this once if you had older volumes/config and want a clean DB bootstrap. (OPTIONAL)
+docker compose down -v
+
+docker compose up --build
+```
+
+`backend` container startup now:
+
+- runs `prisma migrate deploy`
+- seeds database automatically on first run when catalog is empty (`AUTO_SEED=true` in compose)
+
+Database UI (host):
+
+- Prisma Studio: `http://localhost:5555`
+
+After seeding (automatic in Docker, or manual via `npm run database` in local mode):
 
 ## Engineering Competencies Demonstrated.
 
