@@ -16,8 +16,12 @@ services:
         value: production
       - key: RUN_MIGRATIONS
         value: "true"
+      - key: USE_EMBEDDED_POSTGRES
+        value: "true"
       - key: AUTO_SEED
         value: "false"
+      - key: DB_CONNECT_MAX_RETRIES
+        value: "30"
       - key: POSTGRES_USER
         value: grindspot
       - key: POSTGRES_PASSWORD

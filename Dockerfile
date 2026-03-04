@@ -53,9 +53,15 @@ set -e
 : "${POSTGRES_DATA_DIR:=/var/data/postgres}"
 : "${RUN_MIGRATIONS:=true}"
 : "${AUTO_SEED:=false}"
+: "${USE_EMBEDDED_POSTGRES:=true}"
 
-if [ -z "${DATABASE_URL}" ]; then
-  export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
+if [ "${USE_EMBEDDED_POSTGRES}" = "true" ]; then
+  ENC_POSTGRES_USER="$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1] ?? ""))' "${POSTGRES_USER}")"
+  ENC_POSTGRES_PASSWORD="$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1] ?? ""))' "${POSTGRES_PASSWORD}")"
+  export DATABASE_URL="postgresql://${ENC_POSTGRES_USER}:${ENC_POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
+elif [ -z "${DATABASE_URL}" ]; then
+  echo "DATABASE_URL is required when USE_EMBEDDED_POSTGRES is false."
+  exit 1
 fi
 
 PG_BIN_DIR="$(dirname "$(find /usr/lib/postgresql -maxdepth 4 -type f -name pg_ctl | sort -V | tail -n 1)")"
@@ -76,19 +82,25 @@ fi
 
 runuser -u postgres -- "${PG_BIN_DIR}/pg_ctl" -D "${POSTGRES_DATA_DIR}" -o "-c listen_addresses=127.0.0.1 -p ${POSTGRES_PORT}" -w start
 
+SQL_POSTGRES_USER_IDENT="$(printf "%s" "${POSTGRES_USER}" | sed 's/"/""/g')"
+SQL_POSTGRES_USER_LIT="$(printf "%s" "${POSTGRES_USER}" | sed "s/'/''/g")"
+SQL_POSTGRES_PASSWORD_LIT="$(printf "%s" "${POSTGRES_PASSWORD}" | sed "s/'/''/g")"
+SQL_POSTGRES_DB_IDENT="$(printf "%s" "${POSTGRES_DB}" | sed 's/"/""/g')"
+SQL_POSTGRES_DB_LIT="$(printf "%s" "${POSTGRES_DB}" | sed "s/'/''/g")"
+
 runuser -u postgres -- "${PG_BIN_DIR}/psql" -v ON_ERROR_STOP=1 postgres <<SQL
 DO \$\$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${POSTGRES_USER}') THEN
-    CREATE ROLE "${POSTGRES_USER}" LOGIN PASSWORD '${POSTGRES_PASSWORD}';
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${SQL_POSTGRES_USER_LIT}') THEN
+    CREATE ROLE "${SQL_POSTGRES_USER_IDENT}" LOGIN PASSWORD '${SQL_POSTGRES_PASSWORD_LIT}';
   ELSE
-    ALTER ROLE "${POSTGRES_USER}" WITH LOGIN PASSWORD '${POSTGRES_PASSWORD}';
+    ALTER ROLE "${SQL_POSTGRES_USER_IDENT}" WITH LOGIN PASSWORD '${SQL_POSTGRES_PASSWORD_LIT}';
   END IF;
 END
 \$\$;
-SELECT 'CREATE DATABASE "${POSTGRES_DB}" OWNER "${POSTGRES_USER}"'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${POSTGRES_DB}') \gexec
-GRANT ALL PRIVILEGES ON DATABASE "${POSTGRES_DB}" TO "${POSTGRES_USER}";
+SELECT 'CREATE DATABASE "${SQL_POSTGRES_DB_IDENT}" OWNER "${SQL_POSTGRES_USER_IDENT}"'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${SQL_POSTGRES_DB_LIT}') \gexec
+GRANT ALL PRIVILEGES ON DATABASE "${SQL_POSTGRES_DB_IDENT}" TO "${SQL_POSTGRES_USER_IDENT}";
 SQL
 
 cd /app/backend
@@ -101,6 +113,12 @@ if [ "${AUTO_SEED}" = "true" ]; then
 fi
 
 PORT=5000 node dist/server.js &
+BACKEND_PID=$!
+sleep 3
+if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
+  echo "Backend failed to start. Check logs above for startup errors."
+  exit 1
+fi
 
 cat > /etc/nginx/conf.d/default.conf <<NGINX
 server {
