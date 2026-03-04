@@ -35,16 +35,20 @@ function ProductDetail() {
   const queryClient = useQueryClient();
   const wishlist = useWishlist();
   const compare = useCompare();
+
+  // Local UI feedback + interactive zoom state for the hero image.
   const [status, setStatus] = useState('');
   const [isLoupeActive, setIsLoupeActive] = useState(false);
   const [loupeOrigin, setLoupeOrigin] = useState({ x: 50, y: 50 });
 
+  // Fetch the selected product by route id.
   const productQuery = useQuery({
     queryKey: ['product', id],
     queryFn: async () => (await api.get<Product>(`/products/${id}`)).data,
     enabled: Boolean(id),
   });
 
+  // Fetch related products scoped by category once the primary product is ready.
   const relatedQuery = useQuery({
     queryKey: ['related-products', id, productQuery.data?.category?.slang],
     queryFn: async () => {
@@ -56,6 +60,7 @@ function ProductDetail() {
     enabled: Boolean(id && productQuery.data),
   });
 
+  // Purchase CTA mutation used by both desktop and mobile action bars.
   const addToCart = useMutation({
     mutationFn: async () => {
       if (!id) {
@@ -73,11 +78,14 @@ function ProductDetail() {
   });
 
   const product = productQuery.data;
+
+  // Exclude the current product and limit related cards for a compact section.
   const relatedProducts = useMemo(() => {
     const list = relatedQuery.data ?? [];
     return list.filter((item) => item.id !== id).slice(0, 4);
   }, [relatedQuery.data, id]);
 
+  // Use persisted specifications when available; otherwise derive storefront defaults.
   const specs = useMemo(() => {
     if (!product) {
       return [];
@@ -88,6 +96,7 @@ function ProductDetail() {
     return buildTechnicalSpecs(product);
   }, [product]);
 
+  // Normalize review aggregates for star rating and breakdown visualizations.
   const review = useMemo(() => {
     if (!product) {
       return null;
@@ -312,14 +321,14 @@ function ProductDetail() {
             <img
               src={product.images[0]}
               alt={product.title}
-              className="product-image-zoom h-full w-full object-cover" /* Follows mouse position while hovering to inspect details */
+              className="product-image-zoom h-full w-full object-cover"
               style={{
                 transformOrigin: `${loupeOrigin.x}% ${loupeOrigin.y}%`,
               }}
             />
 
             <span className="absolute left-3 top-3 rounded-full border border-primary-300/70 bg-primary-100/82 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">
-              {product.category?.name ?? 'Collection' /*Added on-image indicator label */}
+              {product.category?.name ?? 'Collection'}
             </span>
             <span className="pointer-events-none absolute bottom-3 right-3 rounded-full border border-primary-300/70 bg-primary-100/82 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary-700">
               {isLoupeActive ? 'Loupe on' : 'Click for loupe'}

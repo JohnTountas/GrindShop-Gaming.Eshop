@@ -20,6 +20,7 @@ import { Navigate } from 'react-router-dom';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      // Cache query results briefly to avoid aggressive refetching during navigation.
       staleTime: 1000 * 60 * 5,
       refetchOnWindowFocus: false,
     },
@@ -33,12 +34,14 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
+            {/* Public catalog and account entry routes */}
             <Route index element={<Home />} />
             <Route path="products/:id" element={<ProductDetail />} />
             <Route path="cart" element={<Cart />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
-            
+
+            {/* Authenticated customer-only routes */}
             <Route path="checkout" element={
               <ProtectedRoute><Checkout /></ProtectedRoute>
             } />
@@ -51,9 +54,13 @@ function App() {
             <Route path="wishlist" element={
               <ProtectedRoute><Wishlist /></ProtectedRoute>
             } />
+
+            {/* Administrator-only route group */}
             <Route path="admin/*" element={
               <ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>
             } />
+
+            {/* Safety fallback for unknown frontend routes */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

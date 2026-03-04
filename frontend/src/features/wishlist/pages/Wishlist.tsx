@@ -47,11 +47,14 @@ function LoadingWishlist() {
 function Wishlist() {
   const queryClient = useQueryClient();
   const wishlist = useWishlist();
+
+  // Per-action status messaging and optimistic pending indicators.
   const [statusMessage, setStatusMessage] = useState('');
   const [statusTone, setStatusTone] = useState<'success' | 'error'>('success');
   const [pendingWishlistId, setPendingWishlistId] = useState<string | null>(null);
   const [pendingCartId, setPendingCartId] = useState<string | null>(null);
 
+  // Server-backed wishlist snapshot for the authenticated user.
   const wishlistQuery = useQuery({
     queryKey: ['wishlist-products'],
     queryFn: async () => {
@@ -62,6 +65,7 @@ function Wishlist() {
 
   const products = useMemo(() => wishlistQuery.data ?? [], [wishlistQuery.data]);
 
+  // Quick cart add flow from wishlist cards.
   const addToCartMutation = useMutation({
     mutationFn: async (productId: string) => api.post('/cart/items', { productId, quantity: 1 }),
     onMutate: (productId) => {

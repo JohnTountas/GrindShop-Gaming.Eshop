@@ -62,6 +62,7 @@ function LoadingOrders() {
 
 // Shows order history, computed KPIs, and quick actions for each order.
 function Orders() {
+  // Pull authenticated user's order history.
   const ordersQuery = useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
@@ -70,6 +71,7 @@ function Orders() {
     },
   });
 
+  // Derive dashboard stats once per query result.
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
   const totalSpent = useMemo(
     () => orders.reduce((sum, order) => sum + Number(order.total), 0),

@@ -1,3 +1,6 @@
+/**
+ * Frontend ESLint configuration tuned for TypeScript + React hooks safety.
+ */
 module.exports = {
   root: true,
   env: { browser: true, es2020: true },

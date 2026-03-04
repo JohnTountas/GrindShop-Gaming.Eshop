@@ -198,6 +198,8 @@ function CheckoutLoading() {
 // Manages checkout state, payment validation, and final order creation workflow.
 function Checkout() {
   const navigate = useNavigate();
+
+  // Shipping, payment, and compliance acknowledgement state.
   const [form, setForm] = useState<ShippingAddress>({
     fullName: '',
     address: '',
@@ -220,10 +222,12 @@ function Checkout() {
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Gate step progression until all shipping fields are populated.
   const isShippingComplete = Object.values(form).every((value) => value.trim().length > 0);
   const selectedPaymentOption =
     PAYMENT_OPTIONS.find((option) => option.id === selectedPaymentMethod) ?? PAYMENT_OPTIONS[0];
 
+  // Load current cart snapshot that backs checkout totals and order payloads.
   const cartQuery = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
@@ -232,6 +236,7 @@ function Checkout() {
     },
   });
 
+  // Submits final order with shipping details and a simulated payment-intent reference.
   const createOrderMutation = useMutation({
     mutationFn: async (paymentIntentId: string) => {
       const response = await api.post('/orders', { shippingAddress: form, paymentIntentId });
@@ -398,6 +403,7 @@ function Checkout() {
   const taxEstimate = subtotal * 0.24;
   const totalEstimate = subtotal + shippingEstimate + taxEstimate;
 
+  // Shared class presets keep form visuals consistent across payment variants.
   const inputClass =
     'mt-1.5 block w-full rounded-xl border border-primary-300/70 bg-primary-100/72 px-3 py-2.5 text-sm text-primary-900 placeholder:text-primary-600 focus:border-accent-700 focus:outline-none';
   const checkboxClass = 'mt-0.5 h-4 w-4 shrink-0 accent-primary-800';

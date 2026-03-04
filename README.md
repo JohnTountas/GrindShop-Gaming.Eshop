@@ -1,6 +1,6 @@
-# GrindSpot: Gaming eShop
+# Project:GrindSpot - Gaming eShop
 
-Full-stack gaming e-commerce platform built as a production-style monorepo.
+A Full-stack gaming e-commerce platform built as a production-style monorepo.
 
 This repository demonstrates end-to-end web development skills across product design, API architecture, database modeling, authentication, admin tooling, and deployment workflows.
 
@@ -46,7 +46,7 @@ GrindSpot is a complete storefront application with:
 - TypeScript strict mode
 - Jest (backend) and Vitest (frontend) test tooling
 
-## What Is Implemented:
+## --- What Is Implemented: ---
 
 ### Customer Experience.
 
@@ -213,28 +213,24 @@ npm run type-check
 npm run build
 ```
 
-## Quick Start instruction:
+## Instructions for local setup (Step-by-step) !!!
 
-### Option A: Full Docker
+### Prerequisites
 
-```bash
-docker-compose up --build
-docker-compose exec backend npx prisma migrate deploy
-docker-compose exec backend npm run database
-```
+Install these tools first:
 
-Access:
+- Node.js 20+
+- npm 10+
+- Docker (or Docker Desktop)
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:5050`
-- API docs: `http://localhost:5050/docs`
-
-### Option B: Local app processes + PostgreSQL
+### Step 1: Install dependencies
 
 ```bash
 cd backend && npm install
 cd ../frontend && npm install
 ```
+
+### Step 2: Configure environment files
 
 Create `backend/.env`:
 
@@ -260,24 +256,65 @@ VITE_API_URL=http://localhost:5000/api
 VITE_STRIPE_PUBLIC_KEY=pk_test_your_stripe_public_key
 ```
 
-Run:
+### Step 3: Start PostgreSQL - ( You will need to install Docker first)
+
+#### On Docker's terminal:
 
 ```bash
 docker-compose up -d postgres
+```
+
+### Step 4: Run Prisma migrations and seed data
+
+```bash
 cd backend
 npx prisma migrate deploy
 npm run database
-npm run dev
+```
 
-cd ../frontend
+### Step 5: Start backend API - (In a terminal)
+
+```bash
+cd backend
 npm run dev
 ```
 
-Access:
+Backend URLs:
+
+- API root: `http://localhost:5000`
+- Swagger docs: `http://localhost:5000/docs`
+- Health endpoint: `http://localhost:5000/health`
+
+### Step 6: Start frontend app - (In a new terminal)
+
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend URL:
+
+- `http://localhost:3000`
+
+### Step 7: Verify the stack is healthy - (Optional but Important)!
+
+- Open `http://localhost:5000/health` and confirm status `ok`.
+- Open `http://localhost:5000/docs` and verify auth/cart/orders routes are listed.
+- Open `http://localhost:3000` and confirm product catalog renders.
+
+### Optional: Full Docker mode (frontend + backend + postgres)
+
+```bash
+docker-compose up --build
+docker-compose exec backend npx prisma migrate deploy
+docker-compose exec backend npm run database
+```
+
+Docker URLs:
 
 - Frontend: `http://localhost:3000`
-- Backend: `http://localhost:5000`
-- API docs: `http://localhost:5000/docs`
+- Backend: `http://localhost:5050`
+- Swagger docs: `http://localhost:5050/docs`
 
 ## Default Accounts
 

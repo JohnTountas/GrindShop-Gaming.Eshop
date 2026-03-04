@@ -62,6 +62,7 @@ function Home() {
   const wishlist = useWishlist();
   const compare = useCompare();
 
+  // UI controls for filtering, sorting, and quick action feedback.
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [brand, setBrand] = useState('all');
@@ -73,12 +74,14 @@ function Home() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [status, setStatus] = useState('');
 
+  // Base catalog query used by cards, filters, trending, and compare tables.
   const productsQuery = useQuery({
     queryKey: ['products', 'premium-catalog'],
     queryFn: async () =>
       (await api.get<ProductsResponse>('/products', { params: { limit: 200 } })).data,
   });
 
+  // Category metadata powers dropdown filters and catalog counters.
   const categoriesQuery = useQuery({
     queryKey: ['categories'],
     queryFn: async () => (await api.get<CategoryWithCount[]>('/categories')).data,
@@ -87,6 +90,7 @@ function Home() {
   const products = productsQuery.data?.products ?? EMPTY_PRODUCTS;
   const categories = categoriesQuery.data ?? EMPTY_CATEGORIES;
 
+  // Pre-compute review snapshots for stable sorting and card-level display.
   const reviewById = useMemo(
     () => new Map(products.map((product) => [product.id, buildReviewSnapshot(product)])),
     [products]
@@ -103,6 +107,7 @@ function Home() {
     );
   }, [products]);
 
+  // Single source of truth for all active catalog filters + sort mode.
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     const min = minPrice ? Number(minPrice) : undefined;
@@ -162,8 +167,10 @@ function Home() {
     .sort((a, b) => (reviewById.get(b.id)?.rating ?? 4) - (reviewById.get(a.id)?.rating ?? 4))
     .slice(0, 4);
 
+  // Hero card prioritizes top trending gear, then falls back to first visible item.
   const hero = trending[0] ?? visible[0];
 
+  // Resolve compare IDs to concrete products for panel and matrix rendering.
   const compareProducts = compare.ids
     .map((id) => products.find((product) => product.id === id))
     .filter(Boolean) as Product[];
@@ -183,6 +190,7 @@ function Home() {
     });
   }, [location.hash, compareProducts.length]);
 
+  // Normalized comparison rows combine fixed metrics and dynamic specifications.
   const comparisonRows = useMemo(() => {
     if (compareProducts.length < 2) {
       return [];
@@ -253,6 +261,7 @@ function Home() {
     return [...coreRows, ...specificationRows];
   }, [compareProducts, reviewById]);
 
+  // "Quick add" mutation powers one-click cart actions from product cards.
   const quickAdd = useMutation({
     mutationFn: async (productId: string) => api.post('/cart/items', { productId, quantity: 1 }),
     onMutate: (productId) => {

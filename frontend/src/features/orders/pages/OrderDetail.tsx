@@ -76,6 +76,7 @@ function LoadingOrderDetail() {
 function OrderDetail() {
   const { id } = useParams<{ id: string }>();
 
+  // Fetch full order payload for the selected order id.
   const orderQuery = useQuery({
     queryKey: ['order', id],
     queryFn: async () => {
@@ -116,6 +117,8 @@ function OrderDetail() {
   }
 
   const order = orderQuery.data;
+
+  // Derived summary values reused across detail and summary cards.
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const itemSubtotal = order.items.reduce(
     (sum, item) => sum + Number(item.priceAtPurchase) * item.quantity,

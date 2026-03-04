@@ -11,6 +11,7 @@ import { showSuccessMessage } from "@/lib/ui/toast";
 
 const FOOTER_MESSAGE_EVENT = "grindspot:open-footer-message";
 
+// Centralized navigation style builder keeps active/inactive link behavior consistent.
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold tracking-[0.08em] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-700 ${
     isActive
@@ -18,6 +19,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
       : "border border-primary-300/60 bg-primary-100/60 text-primary-700 hover:-translate-y-0.5 hover:border-accent-700/60 hover:text-primary-900"
   }`;
 
+// Footer knowledge-base content keyed by event names used across the app.
 const FOOTER_MESSAGES = {
   helpCenter: {
     section: "Support",
@@ -143,7 +145,7 @@ function Layout() {
     };
   }, [activeFooterMessage]);
 
-  //Scroll-direction for Header with small delta threshold to prevent jitter
+  // Tracks scroll direction with a small threshold to avoid header flicker on minor movement.
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const minimumDelta = 7;

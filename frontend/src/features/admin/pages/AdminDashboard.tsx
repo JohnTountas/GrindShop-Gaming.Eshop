@@ -53,20 +53,25 @@ function formatCurrency(value: number) {
 // Coordinates order operations and product-content management for administrators.
 function AdminDashboard() {
   const queryClient = useQueryClient();
+
+  // Product targeting + operator feedback.
   const [selectedProductId, setSelectedProductId] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
 
+  // Specification form state.
   const [specLabel, setSpecLabel] = useState('');
   const [specValue, setSpecValue] = useState('');
   const [specPosition, setSpecPosition] = useState('0');
 
+  // Review form state.
   const [reviewAuthor, setReviewAuthor] = useState('');
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewComment, setReviewComment] = useState('');
   const [reviewRating, setReviewRating] = useState('5');
   const [reviewVerified, setReviewVerified] = useState(true);
 
+  // Dashboard data queries.
   const ordersQuery = useQuery({
     queryKey: ['admin-orders'],
     queryFn: async () => (await api.get<AdminOrder[]>('/admin/orders')).data,
@@ -93,6 +98,7 @@ function AdminDashboard() {
     enabled: Boolean(selectedProductId),
   });
 
+  // Order lifecycle mutation.
   const updateOrderStatusMutation = useMutation({
     mutationFn: async (payload: { orderId: string; status: OrderStatus }) =>
       api.patch(`/admin/orders/${payload.orderId}/status`, { status: payload.status }),
@@ -105,6 +111,7 @@ function AdminDashboard() {
     },
   });
 
+  // Specification CRUD mutations.
   const createSpecMutation = useMutation({
     mutationFn: async () =>
       api.post(`/admin/catalog/products/${selectedProductId}/specifications`, {
@@ -160,6 +167,7 @@ function AdminDashboard() {
       setStatusMessage(getApiErrorMessage(error, 'Failed to delete specification')),
   });
 
+  // Review CRUD mutations.
   const createReviewMutation = useMutation({
     mutationFn: async () =>
       api.post(`/admin/catalog/products/${selectedProductId}/reviews`, {
@@ -223,6 +231,7 @@ function AdminDashboard() {
   const products = productsQuery.data?.products ?? EMPTY_ADMIN_PRODUCTS;
   const selectedProduct = productContentQuery.data;
 
+  // Headline KPI cards.
   const pending = useMemo(
     () => orders.filter((order) => order.status === 'PENDING').length,
     [orders]

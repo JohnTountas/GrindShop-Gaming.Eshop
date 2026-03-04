@@ -40,6 +40,7 @@ function Login() {
 
     try {
       const response = await api.post<AuthResponse>("/auth/login", { email, password });
+      // Persist the short-lived access token and lightweight user profile for route guards.
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       showSuccessMessage({
@@ -135,7 +136,7 @@ function Login() {
         </form>
 
         <p className="mt-4 text-sm text-primary-600">
-          You dont have an account yet?&nbsp;
+          You don't have an account yet?&nbsp;
           <Link to="/register" className="font-semibold text-accent-700 hover:text-accent-600">
             Register
           </Link>

@@ -48,6 +48,7 @@ function Register() {
         lastName: lastName || undefined,
       });
 
+      // Persist newly issued session credentials so the user is signed in immediately.
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       showSuccessMessage({

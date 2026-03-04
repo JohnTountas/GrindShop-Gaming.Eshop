@@ -165,7 +165,7 @@ async function main() {
   console.log("Starting database ...");
   const db = prisma as any;
 
-  // Clean database
+  // Phase 1: clear dependent tables first to satisfy FK constraints.
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.cartItem.deleteMany();
@@ -179,7 +179,7 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create admin user
+  // Phase 2: seed baseline accounts used by local development and demos.
   const adminPassword = await bcrypt.hash("admin123", 10);
   const admin = await prisma.user.create({
     data: {
@@ -192,7 +192,6 @@ async function main() {
   });
   console.log("\nAdmin user created:", admin.email);
 
-  // Create regular user
   const userPassword = await bcrypt.hash("user123", 10);
   const user = await prisma.user.create({
     data: {
@@ -213,7 +212,7 @@ async function main() {
   });
   console.log("Loyalty profiles created: 2");
 
-  // Create categories
+  // Phase 3: create category taxonomy used by catalog and filtering APIs.
   const categories = await Promise.all([
     prisma.category.create({
       data: { name: "Gaming Desktop PC", slang: "Gaming-desktop-pc" },
@@ -432,7 +431,7 @@ async function main() {
         stock: 31,
       },
       {
-        title: "Logitech G903 Lightspeed (Hero) Wireless", // < ---------------------------------
+        title: "Logitech G903 Lightspeed (Hero) Wireless",
         description:
           "Quiet-click office mouse built for shared spaces, combining accurate tracking, silent wheel mechanics, and polished multi-surface glide.",
         price: 49.0,
@@ -651,9 +650,11 @@ async function main() {
   };
 
   for (const slang of Object.keys(productsByCategory) as CategorySlang[]) {
+    // Guard against accidental over-seeding when product arrays are edited.
     productsByCategory[slang] = productsByCategory[slang].slice(0, TARGET_PRODUCTS_PER_CATEGORY);
   }
 
+  // Validate category-level seed integrity before writing data to the database.
   for (const [slang, products] of Object.entries(productsByCategory) as Array<
     [CategorySlang, DatabaseProduct[]]
   >) {
@@ -664,6 +665,7 @@ async function main() {
     categories.map((category: (typeof categories)[number]) => [category.slang, category.id])
   );
 
+  // Flatten category buckets into createMany input with resolved foreign keys.
   const products = (
     Object.entries(productsByCategory) as Array<[CategorySlang, DatabaseProduct[]]>
   ).flatMap(([slang, categoryProducts]) => {
@@ -696,6 +698,7 @@ async function main() {
   console.log("Products created:", products.length);
   console.log(`Products per category: ${TARGET_PRODUCTS_PER_CATEGORY}`);
 
+  // Reload product IDs to build relational seed rows for specs and reviews.
   const createdProducts = await prisma.product.findMany({
     include: {
       category: true,

@@ -58,11 +58,14 @@ function LoadingCart() {
 function Cart() {
   const queryClient = useQueryClient();
   const authed = isAuthenticated();
+
+  // UI feedback for asynchronous cart actions.
   const [statusMessage, setStatusMessage] = useState('');
   const [statusTone, setStatusTone] = useState<'success' | 'error'>('success');
   const [pendingUpdateItemId, setPendingUpdateItemId] = useState<string | null>(null);
   const [pendingRemoveItemId, setPendingRemoveItemId] = useState<string | null>(null);
 
+  // Protected cart query (disabled until the user is authenticated).
   const cartQuery = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
@@ -72,6 +75,7 @@ function Cart() {
     enabled: authed,
   });
 
+  // Quantity mutation for +/- controls on each cart line.
   const updateItemMutation = useMutation({
     mutationFn: async (payload: { itemId: string; quantity: number }) => {
       return api.patch(`/cart/items/${payload.itemId}`, { quantity: payload.quantity });
@@ -94,6 +98,7 @@ function Cart() {
     },
   });
 
+  // Remove mutation for deleting a single cart line.
   const removeItemMutation = useMutation({
     mutationFn: async (itemId: string) => api.delete(`/cart/items/${itemId}`),
     onMutate: (itemId) => {
@@ -166,6 +171,8 @@ function Cart() {
 
   const cart = cartQuery.data;
   const items = cart?.items ?? [];
+
+  // Derived totals used by summary cards and checkout CTA context.
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + itemTotal(item), 0);
   const shippingEstimate = subtotal >= 100 || items.length === 0 ? 0 : 3.5;
