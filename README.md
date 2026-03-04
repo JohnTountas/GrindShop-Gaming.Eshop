@@ -221,7 +221,9 @@ All URLs of the project:
 - Database UI URL: `http://localhost:5555` -> Renders the Database's UI.
 - Frontend URL: `http://localhost:3000` -> Renders the whole FrontPage.
 
-## Instructions for local setup (Step-by-step) !!!
+##
+
+### Instructions for local setup (Step-by-step) !!!
 
 ## -------------------------------- WAY 1: --------------------------------
 
@@ -314,8 +316,6 @@ npm run dev
 
 ##
 
-##
-
 ## Default Accounts:
 
 ### YOU CAN LOGIN WITH THE CREDENTIALS BELOW IF YOU WANT:
@@ -326,8 +326,6 @@ npm run dev
 - User: `user@grindspot.com` / `user123`
 
 ### ----------------------------------------------------------
-
-##
 
 ##
 
