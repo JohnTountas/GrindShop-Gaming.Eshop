@@ -1,4 +1,4 @@
-# IMPORTANT FILE: Needs for entire Full Stack App to go LIVE on "Render.com"
+# IMPORTANT FILE: Full-stack deployment on Render (frontend + backend + PostgreSQL)
 
 FROM node:20-bookworm-slim AS backend-build
 
@@ -30,14 +30,13 @@ RUN npm run build
 FROM node:20-bookworm-slim AS runtime
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends nginx postgresql \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf
+  && apt-get install -y --no-install-recommends postgresql \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY --from=backend-build /app/backend /app/backend
-COPY --from=frontend-build /app/frontend/dist /usr/share/nginx/html
+COPY --from=frontend-build /app/frontend/dist /app/frontend-dist
 
 RUN mkdir -p /app/backend/uploads /var/data/postgres
 
@@ -59,36 +58,32 @@ if [ "${USE_EMBEDDED_POSTGRES}" = "true" ]; then
   ENC_POSTGRES_USER="$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1] ?? ""))' "${POSTGRES_USER}")"
   ENC_POSTGRES_PASSWORD="$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1] ?? ""))' "${POSTGRES_PASSWORD}")"
   export DATABASE_URL="postgresql://${ENC_POSTGRES_USER}:${ENC_POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
-elif [ -z "${DATABASE_URL}" ]; then
-  echo "DATABASE_URL is required when USE_EMBEDDED_POSTGRES is false."
-  exit 1
-fi
 
-PG_BIN_DIR="$(dirname "$(find /usr/lib/postgresql -maxdepth 4 -type f -name pg_ctl | sort -V | tail -n 1)")"
-if [ -z "${PG_BIN_DIR}" ] \
-  || [ ! -x "${PG_BIN_DIR}/pg_ctl" ] \
-  || [ ! -x "${PG_BIN_DIR}/initdb" ] \
-  || [ ! -x "${PG_BIN_DIR}/psql" ]; then
-  echo "PostgreSQL binaries not found."
-  exit 1
-fi
+  PG_BIN_DIR="$(dirname "$(find /usr/lib/postgresql -maxdepth 4 -type f -name pg_ctl | sort -V | tail -n 1)")"
+  if [ -z "${PG_BIN_DIR}" ] \
+    || [ ! -x "${PG_BIN_DIR}/pg_ctl" ] \
+    || [ ! -x "${PG_BIN_DIR}/initdb" ] \
+    || [ ! -x "${PG_BIN_DIR}/psql" ]; then
+    echo "PostgreSQL binaries not found."
+    exit 1
+  fi
 
-mkdir -p "${POSTGRES_DATA_DIR}"
-chown -R postgres:postgres "${POSTGRES_DATA_DIR}"
+  mkdir -p "${POSTGRES_DATA_DIR}"
+  chown -R postgres:postgres "${POSTGRES_DATA_DIR}"
 
-if [ ! -f "${POSTGRES_DATA_DIR}/PG_VERSION" ]; then
-  runuser -u postgres -- "${PG_BIN_DIR}/initdb" -D "${POSTGRES_DATA_DIR}" --encoding=UTF8 --locale=C
-fi
+  if [ ! -f "${POSTGRES_DATA_DIR}/PG_VERSION" ]; then
+    runuser -u postgres -- "${PG_BIN_DIR}/initdb" -D "${POSTGRES_DATA_DIR}" --encoding=UTF8 --locale=C
+  fi
 
-runuser -u postgres -- "${PG_BIN_DIR}/pg_ctl" -D "${POSTGRES_DATA_DIR}" -o "-c listen_addresses=127.0.0.1 -p ${POSTGRES_PORT}" -w start
+  runuser -u postgres -- "${PG_BIN_DIR}/pg_ctl" -D "${POSTGRES_DATA_DIR}" -o "-c listen_addresses=127.0.0.1 -p ${POSTGRES_PORT}" -w start
 
-SQL_POSTGRES_USER_IDENT="$(printf "%s" "${POSTGRES_USER}" | sed 's/"/""/g')"
-SQL_POSTGRES_USER_LIT="$(printf "%s" "${POSTGRES_USER}" | sed "s/'/''/g")"
-SQL_POSTGRES_PASSWORD_LIT="$(printf "%s" "${POSTGRES_PASSWORD}" | sed "s/'/''/g")"
-SQL_POSTGRES_DB_IDENT="$(printf "%s" "${POSTGRES_DB}" | sed 's/"/""/g')"
-SQL_POSTGRES_DB_LIT="$(printf "%s" "${POSTGRES_DB}" | sed "s/'/''/g")"
+  SQL_POSTGRES_USER_IDENT="$(printf "%s" "${POSTGRES_USER}" | sed 's/"/""/g')"
+  SQL_POSTGRES_USER_LIT="$(printf "%s" "${POSTGRES_USER}" | sed "s/'/''/g")"
+  SQL_POSTGRES_PASSWORD_LIT="$(printf "%s" "${POSTGRES_PASSWORD}" | sed "s/'/''/g")"
+  SQL_POSTGRES_DB_IDENT="$(printf "%s" "${POSTGRES_DB}" | sed 's/"/""/g')"
+  SQL_POSTGRES_DB_LIT="$(printf "%s" "${POSTGRES_DB}" | sed "s/'/''/g")"
 
-runuser -u postgres -- "${PG_BIN_DIR}/psql" -v ON_ERROR_STOP=1 postgres <<SQL
+  runuser -u postgres -- "${PG_BIN_DIR}/psql" -v ON_ERROR_STOP=1 postgres <<SQL
 DO \$\$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${SQL_POSTGRES_USER_LIT}') THEN
@@ -102,6 +97,10 @@ SELECT 'CREATE DATABASE "${SQL_POSTGRES_DB_IDENT}" OWNER "${SQL_POSTGRES_USER_ID
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${SQL_POSTGRES_DB_LIT}') \gexec
 GRANT ALL PRIVILEGES ON DATABASE "${SQL_POSTGRES_DB_IDENT}" TO "${SQL_POSTGRES_USER_IDENT}";
 SQL
+elif [ -z "${DATABASE_URL}" ]; then
+  echo "DATABASE_URL is required when USE_EMBEDDED_POSTGRES is false."
+  exit 1
+fi
 
 cd /app/backend
 if [ "${RUN_MIGRATIONS}" = "true" ]; then
@@ -112,66 +111,8 @@ if [ "${AUTO_SEED}" = "true" ]; then
   npm run database
 fi
 
-PORT=5000 node dist/server.js &
-BACKEND_PID=$!
-sleep 3
-if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
-  echo "Backend failed to start. Check logs above for startup errors."
-  exit 1
-fi
-
-cat > /etc/nginx/conf.d/default.conf <<NGINX
-server {
-  listen ${PORT};
-  listen [::]:${PORT};
-  server_name _;
-
-  root /usr/share/nginx/html;
-  index index.html;
-
-  location /api {
-    proxy_pass http://127.0.0.1:5000;
-    proxy_http_version 1.1;
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-  }
-
-  location /docs {
-    proxy_pass http://127.0.0.1:5000;
-    proxy_http_version 1.1;
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-  }
-
-  location /health {
-    proxy_pass http://127.0.0.1:5000;
-    proxy_http_version 1.1;
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-  }
-
-  location /uploads {
-    proxy_pass http://127.0.0.1:5000;
-    proxy_http_version 1.1;
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-  }
-
-  location / {
-    try_files \$uri \$uri/ /index.html;
-  }
-}
-NGINX
-
-exec nginx -g 'daemon off;'
+export FRONTEND_DIST_PATH=/app/frontend-dist
+exec node dist/server.js
 EOF
 RUN chmod +x /app/start.sh
 

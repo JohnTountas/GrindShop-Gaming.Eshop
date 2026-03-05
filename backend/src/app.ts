@@ -2,6 +2,8 @@
  * Creates and configures the Express application, middleware, and route wiring.
  */
 import express, { Express } from "express";
+import fs from "fs";
+import path from "path";
 import cors, { CorsOptions } from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -27,6 +29,7 @@ const ROUTE_PATHS = {
 
 const DIRECTORY_PATHS = {
   uploadsDirectory: "uploads",
+  frontendDistDirectory: process.env.FRONTEND_DIST_PATH || "",
 } as const;
 
 interface ApplicationSetupConfig {
@@ -172,6 +175,40 @@ function registerApiFeatureRoutes(expressApplication: Express, apiBasePath: stri
   expressApplication.use(`${apiBasePath}/me`, compareWishlistRoutes);
 }
 
+// Checks whether a frontend build exists and can be served.
+function hasFrontendBuild(frontendDistDirectory: string): boolean {
+  if (!frontendDistDirectory) {
+    return false;
+  }
+
+  const indexFilePath = path.join(frontendDistDirectory, "index.html");
+  return fs.existsSync(indexFilePath);
+}
+
+// Serves frontend static assets and SPA fallback while excluding API/system routes.
+function registerFrontendRoutes(
+  expressApplication: Express,
+  frontendDistDirectory: string,
+  routePaths: typeof ROUTE_PATHS
+): void {
+  expressApplication.use(express.static(frontendDistDirectory));
+
+  expressApplication.get("*", (request, response, next) => {
+    const requestPath = request.path;
+    const isApiRoute = requestPath.startsWith(routePaths.apiBase);
+    const isDocsRoute = requestPath.startsWith(routePaths.apiDocs);
+    const isHealthRoute = requestPath === routePaths.healthCheck;
+    const isUploadsRoute = requestPath.startsWith(routePaths.uploadsPublicPath);
+
+    if (isApiRoute || isDocsRoute || isHealthRoute || isUploadsRoute) {
+      next();
+      return;
+    }
+
+    response.sendFile(path.join(frontendDistDirectory, "index.html"));
+  });
+}
+
 // Registers a fallback 404 handler for unmatched routes.
 function registerNotFoundRoute(expressApplication: Express): void {
   expressApplication.use((_request, response) => {
@@ -195,9 +232,19 @@ function createExpressApplication(setupConfig: ApplicationSetupConfig): Express 
     expressApplication,
     setupConfig.routePaths.apiDocs
   );
-  registerRootRoute(expressApplication);
   registerHealthCheckRoute(expressApplication, setupConfig.routePaths.healthCheck);
   registerApiFeatureRoutes(expressApplication, setupConfig.routePaths.apiBase);
+
+  if (hasFrontendBuild(setupConfig.directoryPaths.frontendDistDirectory)) {
+    registerFrontendRoutes(
+      expressApplication,
+      setupConfig.directoryPaths.frontendDistDirectory,
+      setupConfig.routePaths
+    );
+  } else {
+    registerRootRoute(expressApplication);
+  }
+
   registerNotFoundRoute(expressApplication);
   expressApplication.use(errorHandler);
 
