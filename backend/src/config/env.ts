@@ -12,8 +12,8 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || '',
 
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+    secret: process.env.JWT_SECRET || 'grindspot-dev-access-token-secret',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'grindspot-dev-refresh-token-secret',
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
