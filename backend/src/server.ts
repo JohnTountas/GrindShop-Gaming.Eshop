@@ -7,6 +7,7 @@ import { config } from "./config/env";
 import prisma from "./config/database";
 
 const DEFAULT_PORT = 5000;
+const DEFAULT_HOST = "0.0.0.0";
 const LOCAL_BASE_URL = "http://localhost";
 const DOCS_PATH = "/docs";
 const DEFAULT_PORT_RETRY_ATTEMPTS = 1;
@@ -45,10 +46,11 @@ function resolvePortRetryAttempts(value: string | undefined, fallback: number): 
 function tryStartServerOnPort(
   expressApp: Express,
   serverPort: number,
-  environmentName: string
+  environmentName: string,
+  listenHost: string
 ): Promise<boolean> {
   return new Promise((resolve, reject) => {
-    const server = expressApp.listen(serverPort, () => {
+    const server = expressApp.listen(serverPort, listenHost, () => {
       const startupMessages = buildStartupMessages(serverPort, environmentName);
       logStartupMessages(startupMessages);
       resolve(true);
@@ -70,7 +72,8 @@ function tryStartServerOnPort(
 async function startServer(
   expressApp: Express,
   preferredPort: number,
-  environmentName: string
+  environmentName: string,
+  listenHost: string
 ): Promise<number> {
   const maxAttempts = resolvePortRetryAttempts(
     process.env.PORT_RETRY_ATTEMPTS,
@@ -79,7 +82,12 @@ async function startServer(
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const candidatePort = preferredPort + attempt;
-    const started = await tryStartServerOnPort(expressApp, candidatePort, environmentName);
+    const started = await tryStartServerOnPort(
+      expressApp,
+      candidatePort,
+      environmentName,
+      listenHost
+    );
     if (started) {
       if (candidatePort !== preferredPort) {
         console.warn(
@@ -97,6 +105,7 @@ async function startServer(
 }
 
 const serverPort = resolveServerPort(config.port, DEFAULT_PORT);
+const serverHost = DEFAULT_HOST;
 const DB_CONNECT_MAX_RETRIES = parseInt(process.env.DB_CONNECT_MAX_RETRIES || "10", 10);
 const DB_CONNECT_RETRY_DELAY_MS = parseInt(process.env.DB_CONNECT_RETRY_DELAY_MS || "2000", 10);
 
@@ -152,7 +161,7 @@ async function ensureDatabaseConnection(): Promise<void> {
 // Coordinates database readiness and HTTP server startup.
 async function bootstrap(): Promise<void> {
   await ensureDatabaseConnection();
-  await startServer(app, serverPort, config.nodeEnv);
+  await startServer(app, serverPort, config.nodeEnv, serverHost);
 }
 
 bootstrap().catch((error) => {

@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
-    "database": "prisma generate && npx tsx prisma/database.ts",
+    "database": "npx tsx prisma/database.ts",
     "studio": "node scripts/prisma-studio.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
