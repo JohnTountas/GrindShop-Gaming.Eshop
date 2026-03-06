@@ -51,12 +51,14 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://grindspot:grindspot_password@localhost:5432/grindspot_test
+          DIRECT_URL: postgresql://grindspot:grindspot_password@localhost:5432/grindspot_test
         run: npx prisma migrate deploy
 
       - name: Run tests
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://grindspot:grindspot_password@localhost:5432/grindspot_test
+          DIRECT_URL: postgresql://grindspot:grindspot_password@localhost:5432/grindspot_test
           JWT_SECRET: grindspot-ci-access-token-secret
           JWT_REFRESH_SECRET: grindspot-ci-refresh-token-secret
           NODE_ENV: test

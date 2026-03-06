@@ -262,6 +262,106 @@ All the URLs that you can check are:
 
 ##
 
+### Deploy on Fly.io (frontend + backend + PostgreSQL)
+
+This repository is now prepared for Fly.io with:
+
+- Root `Dockerfile` that builds frontend and backend together.
+- Root `fly.toml` for Fly app config.
+- Prisma `DIRECT_URL` support for migration-safe managed Postgres connections.
+
+Follow these steps in order:
+
+1. Install Fly CLI and login:
+
+```bash
+# Windows PowerShell
+pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"
+
+# then
+fly auth login
+```
+
+2. Pick names and region:
+
+- App name example: `grindspot-fly-app`
+- Postgres cluster name example: `grindspot-pg`
+- Region example: `ams` (or nearest to your users)
+
+3. Update `fly.toml`:
+
+- Set `app = "YOUR_UNIQUE_APP_NAME"`
+- Set `primary_region = "YOUR_REGION"`
+- Set `[build.args].VITE_STRIPE_PUBLIC_KEY` to your real publishable Stripe key
+
+4. Create the Fly app:
+
+```bash
+fly apps create YOUR_UNIQUE_APP_NAME
+```
+
+5. Create the uploads volume:
+
+```bash
+fly volumes create uploads_data --app YOUR_UNIQUE_APP_NAME --region YOUR_REGION --size 3
+```
+
+6. Create Managed Postgres:
+
+```bash
+fly mpg create --name YOUR_PG_CLUSTER_NAME --region YOUR_REGION --volume-size 10
+```
+
+7. Attach Postgres to app (sets pooled `DATABASE_URL` automatically):
+
+```bash
+fly mpg attach YOUR_PG_CLUSTER_NAME --app YOUR_UNIQUE_APP_NAME
+```
+
+8. Set required app secrets:
+
+```bash
+fly secrets set --app YOUR_UNIQUE_APP_NAME JWT_SECRET="replace-with-strong-access-token-secret" JWT_REFRESH_SECRET="replace-with-strong-refresh-token-secret" STRIPE_SECRET_KEY="sk_live_or_test_key" STRIPE_WEBHOOK_SECRET="whsec_key" CORS_ORIGIN="https://YOUR_UNIQUE_APP_NAME.fly.dev"
+```
+
+9. Set `DIRECT_URL` (required by Prisma migrations with managed Postgres):
+
+- Open Fly Dashboard -> your MPG cluster -> Connect tab.
+- Copy the **Direct** Postgres connection string.
+- Set it as secret:
+
+```bash
+fly secrets set --app YOUR_UNIQUE_APP_NAME DIRECT_URL="postgres://user:pass@direct....flympg.net/fly-db"
+```
+
+10. Deploy:
+
+```bash
+fly deploy --app YOUR_UNIQUE_APP_NAME
+```
+
+11. Verify production endpoints:
+
+- `https://YOUR_UNIQUE_APP_NAME.fly.dev/`
+- `https://YOUR_UNIQUE_APP_NAME.fly.dev/health`
+- `https://YOUR_UNIQUE_APP_NAME.fly.dev/docs`
+- `https://YOUR_UNIQUE_APP_NAME.fly.dev/api/products`
+
+12. Monitor logs/status:
+
+```bash
+fly status --app YOUR_UNIQUE_APP_NAME
+fly logs --app YOUR_UNIQUE_APP_NAME
+```
+
+Notes:
+
+- The backend runs migrations on startup (`prisma migrate deploy`).
+- `AUTO_SEED=true` seeds data only if products are missing.
+- Frontend is served by backend from `FRONTEND_DIST_PATH=/app/frontend-dist`, so `/api` works on same domain.
+
+##
+
 ##
 
 ### Default Accounts:

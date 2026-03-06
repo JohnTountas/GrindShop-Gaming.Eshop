@@ -29,6 +29,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://grindspot:grindspot_password@postgres:5432/grindspot_DB
+      DIRECT_URL: postgresql://grindspot:grindspot_password@postgres:5432/grindspot_DB
       JWT_SECRET: grindspot-access-token-signing-key-change-me
       JWT_REFRESH_SECRET: grindspot-refresh-token-signing-key-change-me
       JWT_EXPIRES_IN: 15m
