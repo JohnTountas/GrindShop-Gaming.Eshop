@@ -238,9 +238,19 @@ npm run build
 4. That's it, The project now is up!
    On your browser you can use: 'http://localhost:3000' to check the site.
 
+If you want to access the Database:
+
+- On docker's terminal use: "cd backend" to navigate to backend folder.
+
+```bash
+- npm run studio
+```
+
+- Congratulations, now you can access `http://localhost:5555' (It opens automatically).
+
 ##
 
-### You can also check:
+### You may also check:
 
 All the URLs that you can check are:
 
@@ -249,6 +259,8 @@ All the URLs that you can check are:
 - Health endpoint: `http://localhost:5000/health` -> Confirm status if status: `ok`.
 - Database UI URL: `http://localhost:5555` -> Renders the Database's UI.
 - Frontend URL: `http://localhost:3000` -> Renders the whole FrontPage.
+
+##
 
 ##
 
@@ -285,3 +297,7 @@ This project showcases my personal skills relevant to software engineer/web deve
 ## Project Goal
 
 GrindSpot is designed as one of my portfolio-projects, included production-style codebase that demonstrates not only implementation ability, but also architecture clarity, maintainability, and delivery discipline expected in professional software teams.
+
+```
+
+```

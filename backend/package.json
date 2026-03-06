@@ -10,7 +10,7 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "database": "prisma generate && npx tsx prisma/database.ts",
-    "studio": "prisma studio",
+    "studio": "node scripts/prisma-studio.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "type-check": "tsc --noEmit",
