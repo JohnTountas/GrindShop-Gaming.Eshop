@@ -1,6 +1,7 @@
 /**
  * Constants for checkout payment experiences.
  */
+import { FOOTER_MESSAGE_EVENT } from '@/shared/components/layout/constants';
 import type { PaymentOption } from './types';
 
 // Payment option catalog used by the checkout UI.
@@ -36,6 +37,4 @@ export const PAYMENT_OPTIONS: PaymentOption[] = [
     complianceNote: 'Regulated remittance reference controls',
   },
 ];
-
-// Event name used to open footer policy/support modals.
-export const FOOTER_MESSAGE_EVENT = 'grindspot:open-footer-message';
+export { FOOTER_MESSAGE_EVENT };
