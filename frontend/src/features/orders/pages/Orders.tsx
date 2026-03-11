@@ -1,14 +1,14 @@
 /**
  * Order history page listing customer purchases and statuses.
  */
-import { CSSProperties, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { getApiErrorMessage } from '@/lib/api/error';
-import { LoadingOrders } from '../components/LoadingOrders';
-import { ORDER_STATUS_STYLES } from '../constants';
-import { useOrders } from '../hooks/useOrders';
-import { formatCurrency } from '../utils/formatCurrency';
-import { formatDate } from '../utils/formatDate';
+import { CSSProperties, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { getApiErrorMessage } from "@/lib/api/error";
+import { LoadingOrders } from "../components/LoadingOrders";
+import { ORDER_STATUS_STYLES } from "../constants";
+import { useOrders } from "../hooks/useOrders";
+import { formatCurrency } from "../utils/formatCurrency";
+import { formatDate } from "../utils/formatDate";
 
 // Shows order history, computed KPIs, and quick actions for each order.
 function Orders() {
@@ -17,17 +17,21 @@ function Orders() {
 
   // Derive dashboard stats once per query result.
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
-  const totalSpent = useMemo(
+  const revenue = useMemo(
     () => orders.reduce((sum, order) => sum + Number(order.total), 0),
-    [orders],
+    [orders]
   );
   const pendingCount = useMemo(
-    () => orders.filter((order) => order.status === 'PENDING').length,
-    [orders],
+    () => orders.filter((order) => order.status === "PENDING").length,
+    [orders]
+  );
+  const paidCount = useMemo(
+    () => orders.filter((order) => order.status === "PAID").length,
+    [orders]
   );
   const shippedCount = useMemo(
-    () => orders.filter((order) => order.status === 'SHIPPED').length,
-    [orders],
+    () => orders.filter((order) => order.status === "SHIPPED").length,
+    [orders]
   );
 
   if (ordersQuery.isLoading) {
@@ -38,7 +42,9 @@ function Orders() {
     return (
       <div role="alert" className="surface-card border-red-200 bg-red-50 p-5 text-red-800">
         <p className="font-semibold">Unable to load your orders</p>
-        <p className="mt-1 text-sm">{getApiErrorMessage(ordersQuery.error, 'Failed to load orders')}</p>
+        <p className="mt-1 text-sm">
+          {getApiErrorMessage(ordersQuery.error, "Failed to load orders")}
+        </p>
         <button
           type="button"
           onClick={() => ordersQuery.refetch()}
@@ -71,7 +77,7 @@ function Orders() {
           </Link>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-primary-300/70 bg-primary-100/72 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600">
               Total orders
@@ -86,9 +92,21 @@ function Orders() {
           </div>
           <div className="rounded-2xl border border-primary-300/70 bg-primary-100/72 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600">
-              Total spent
+              Paid
             </p>
-            <p className="mt-2 text-2xl font-bold text-primary-900">{formatCurrency(totalSpent)}</p>
+            <p className="mt-2 text-2xl font-bold text-primary-900">{paidCount}</p>
+          </div>
+          <div className="rounded-2xl border border-primary-300/70 bg-primary-100/72 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600">
+              Shipped
+            </p>
+            <p className="mt-2 text-2xl font-bold text-primary-900">{shippedCount}</p>
+          </div>
+          <div className="rounded-2xl border border-primary-300/70 bg-primary-100/72 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600">
+              Revenue
+            </p>
+            <p className="mt-2 text-2xl font-bold text-primary-900">{formatCurrency(revenue)}</p>
           </div>
         </div>
       </header>
@@ -127,7 +145,7 @@ function Orders() {
                     </p>
                     <p className="mt-1 text-sm text-primary-700">{formatDate(order.createdAt)}</p>
                     <p className="mt-1 text-sm text-primary-600">
-                      {itemCount} item{itemCount === 1 ? '' : 's'}
+                      {itemCount} item{itemCount === 1 ? "" : "s"}
                     </p>
                   </div>
 
@@ -165,7 +183,7 @@ function Orders() {
 
       {orders.length > 0 && (
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-500">
-          {shippedCount} shipped order{shippedCount === 1 ? '' : 's'} completed
+          {shippedCount} shipped order{shippedCount === 1 ? "" : "s"} completed
         </p>
       )}
     </section>
