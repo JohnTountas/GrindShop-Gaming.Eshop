@@ -25,6 +25,7 @@ export class OrderService {
   async create(userId: string | undefined, data: CreateOrderDTO) {
     const cartSnapshot = userId ? await this.getCartCheckoutItems(userId) : null;
     const checkoutItems = cartSnapshot?.items ?? (await this.getGuestCheckoutItems(data));
+    const purchasedProductIds = checkoutItems.map((item) => item.productId);
 
     if (checkoutItems.length === 0) {
       throw new AppError('Cart is empty', 400);
@@ -79,6 +80,17 @@ export class OrderService {
       if (cartSnapshot) {
         await tx.cartItem.deleteMany({
           where: { cartId: cartSnapshot.cartId },
+        });
+      }
+
+      if (userId && purchasedProductIds.length > 0) {
+        await tx.wishlistItem.deleteMany({
+          where: {
+            userId,
+            productId: {
+              in: purchasedProductIds,
+            },
+          },
         });
       }
 

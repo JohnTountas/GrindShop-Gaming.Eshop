@@ -117,7 +117,7 @@ function Login() {
         </form>
 
         <p className="mt-4 text-sm text-primary-600">
-          You don't have an account yet?&nbsp;
+          Don't you have an account yet?&nbsp;
           <Link to="/register" className="font-semibold text-accent-700 hover:text-accent-600">
             Register
           </Link>
@@ -128,4 +128,3 @@ function Login() {
 }
 
 export default Login;
-

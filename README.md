@@ -325,7 +325,7 @@ Supported environment controls:
 
 - Refresh tokens are stored as `httpOnly` cookies.
 - The backend trusts a single proxy layer in production for Fly.
-- Prisma requires both `DATABASE_URL` and `DIRECT_URL`.
+- On Fly MPG, use the pooled `DATABASE_URL` for app traffic and the direct `DIRECT_URL` for migrations.
 - Production database credentials must never point to the Compose hostname `postgres:5432`.
 
 ## Current Limitations

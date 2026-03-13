@@ -51,7 +51,7 @@ function PrimaryNavigation({
 
       {authed && (
         <NavLink to="/orders" className={linkClass}>
-          Orders
+          Control Center
         </NavLink>
       )}
 

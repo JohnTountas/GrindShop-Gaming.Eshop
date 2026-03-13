@@ -8,7 +8,7 @@ import { createCheckoutOrder } from '../api/checkout';
 
 // Optional callbacks for create-order mutation behavior.
 interface UseCreateOrderOptions {
-  onSuccess?: (order: Order) => void;
+  onSuccess?: (order: Order) => void | Promise<void>;
   onError?: (message: string) => void;
 }
 
@@ -16,8 +16,8 @@ interface UseCreateOrderOptions {
 export function useCreateOrder(options: UseCreateOrderOptions = {}) {
   return useMutation({
     mutationFn: (payload: CreateOrderData) => createCheckoutOrder(payload),
-    onSuccess: (order) => {
-      options.onSuccess?.(order);
+    onSuccess: async (order) => {
+      await options.onSuccess?.(order);
     },
     onError: (error) => {
       options.onError?.(getApiErrorMessage(error, 'Failed to create order'));

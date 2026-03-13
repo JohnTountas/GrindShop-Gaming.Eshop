@@ -1,11 +1,16 @@
 /**
  * Feature hook that owns checkout state, validation, and order submission.
  */
+import { useQueryClient } from '@tanstack/react-query';
 import { FormEvent, MouseEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { cartKey } from '@/features/cart/queryKeys';
+import { orderDetailKey, ordersKey } from '@/features/orders/queryKeys';
 import { persistGuestOrder } from '@/features/orders/utils/guestOrderStorage';
 import { clearGuestCart } from '@/shared/cart/guestCart';
-import type { CartItem, ShippingAddress } from '@/shared/types';
+import { storefrontStateKey, wishlistProductsKey } from '@/shared/storefront/queryKeys';
+import type { StorefrontState } from '@/shared/storefront/types';
+import type { Cart, CartItem, Order, Product, ShippingAddress } from '@/shared/types';
 import { showSuccessMessage } from '@/shared/ui/toast';
 import { FOOTER_MESSAGE_EVENT, PAYMENT_OPTIONS } from '../constants';
 import type { CardPaymentDetails, PaymentMethod } from '../types';
@@ -54,6 +59,7 @@ type CheckoutFooterMessage = 'termsOfService' | 'privacySecurity';
 // Encapsulates the mutable form state and submission workflow for checkout.
 export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<ShippingAddress>(INITIAL_SHIPPING_ADDRESS);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('CARD');
   const [cardDetails, setCardDetails] = useState<CardPaymentDetails>(INITIAL_CARD_DETAILS);
@@ -68,7 +74,60 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
     PAYMENT_OPTIONS.find((option) => option.id === selectedPaymentMethod) ?? PAYMENT_OPTIONS[0];
 
   const createOrderMutation = useCreateOrder({
-    onSuccess: (order) => {
+    onSuccess: async (order) => {
+      if (authed) {
+        const purchasedProductIds = new Set(order.items.map((item) => item.productId));
+
+        queryClient.setQueryData<Cart | undefined>(cartKey, (currentCart) => {
+          if (!currentCart) {
+            return currentCart;
+          }
+
+          return {
+            ...currentCart,
+            items: [],
+            total: 0,
+            updatedAt: new Date().toISOString(),
+          };
+        });
+
+        queryClient.setQueryData<StorefrontState | undefined>(storefrontStateKey, (currentState) => {
+          if (!currentState) {
+            return currentState;
+          }
+
+          return {
+            ...currentState,
+            wishlistProductIds: currentState.wishlistProductIds.filter(
+              (productId) => !purchasedProductIds.has(productId)
+            ),
+          };
+        });
+
+        queryClient.setQueryData<Product[] | undefined>(wishlistProductsKey, (currentProducts) => {
+          if (!currentProducts) {
+            return currentProducts;
+          }
+
+          return currentProducts.filter((product) => !purchasedProductIds.has(product.id));
+        });
+
+        queryClient.setQueryData<Order[] | undefined>(ordersKey, (currentOrders) => {
+          if (!currentOrders) {
+            return [order];
+          }
+
+          return [order, ...currentOrders.filter((currentOrder) => currentOrder.id !== order.id)];
+        });
+
+        queryClient.setQueryData(orderDetailKey(order.id), order);
+
+        await queryClient.invalidateQueries({ queryKey: cartKey });
+        await queryClient.invalidateQueries({ queryKey: storefrontStateKey });
+        await queryClient.invalidateQueries({ queryKey: wishlistProductsKey });
+        await queryClient.invalidateQueries({ queryKey: ordersKey });
+      }
+
       showSuccessMessage({
         title: 'Order placed successfully',
         message: `Thank you for choosing GrindSpot. Your order is confirmed and our team is preparing it for fast dispatch. Payment authorized with ${selectedPaymentOption.label}.`,
@@ -84,7 +143,11 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
         return;
       }
 
-      navigate(`/orders/${order.id}`);
+      navigate('/orders', {
+        state: {
+          highlightOrderId: order.id,
+        },
+      });
     },
     onError: (message) => {
       setErrorMessage(message);

@@ -5,11 +5,40 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Ignores placeholder connection strings copied from docs or dashboards.
+function isPlaceholderDatabaseUrl(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalizedValue = value.trim();
+  return (
+    normalizedValue === "postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require" ||
+    normalizedValue === "postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require"
+  );
+}
+
+// Resolves the runtime database URL, preferring the pooled app connection.
+function resolveRuntimeDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  const directUrl = process.env.DIRECT_URL?.trim();
+
+  if (databaseUrl && !isPlaceholderDatabaseUrl(databaseUrl)) {
+    return databaseUrl;
+  }
+
+  if (directUrl && !isPlaceholderDatabaseUrl(directUrl)) {
+    return directUrl;
+  }
+
+  return "";
+}
+
 // Exposes normalized environment configuration for the backend runtime.
 export const config = {
   port: parseInt(process.env.PORT || "5000", 10),
   nodeEnv: process.env.NODE_ENV || "development",
-  databaseUrl: process.env.DIRECT_URL || process.env.DATABASE_URL || "",
+  databaseUrl: resolveRuntimeDatabaseUrl(),
 
   jwt: {
     secret: process.env.JWT_SECRET || "grindspot-dev-access-token-secret",
