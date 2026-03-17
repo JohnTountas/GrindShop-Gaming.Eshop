@@ -130,7 +130,7 @@ export function PaymentMethodFields({
           aria-invalid={isMissingValue(bankTransferReference)}
           inputClassName={getInputClass(bankTransferReference)}
         />
-        <p className="mt-2 text-xs text-primary-600">
+        <p className="mt-2 text-sm text-primary-600">
           After order creation, we provide beneficiary account details for this reference. Dispatch
           starts after funds settle.
         </p>
@@ -154,7 +154,7 @@ export function PaymentMethodFields({
         aria-invalid={isMissingValue(walletEmail)}
         inputClassName={getInputClass(walletEmail)}
       />
-      <p className="mt-2 text-xs text-primary-600">
+      <p className="mt-2 text-sm text-primary-700">
         You will be redirected to {selectedPaymentLabel} for final wallet authentication before
         capture.
       </p>

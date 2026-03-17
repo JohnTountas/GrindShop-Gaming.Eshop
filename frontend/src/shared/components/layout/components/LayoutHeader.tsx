@@ -49,12 +49,12 @@ function LayoutHeader({
                 alt={`${BRAND_NAME} logo`}
                 className="h-11 w-auto max-w-[180px] object-contain sm:h-14 sm:max-w-[300px]"
               />
-              <span className="block max-w-[8rem] text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-accent-700 sm:max-w-none sm:text-[0.7rem] sm:tracking-[0.26em]">
+              <span className="block max-w-[8rem] text-[0.62rem] font-bold uppercase tracking-[0.22em] text-accent-700 sm:max-w-none sm:text-[0.8rem] sm:tracking-[0.26em]">
                 {BRAND_TAGLINE}
               </span>
             </NavLink>
 
-            <p className="ml-auto hidden max-w-md text-xs font-medium text-primary-600 lg:block">
+            <p className="ml-auto hidden max-w-md text-sm font-bold text-primary-600 lg:block">
               {BRAND_POSITIONING}
             </p>
           </div>

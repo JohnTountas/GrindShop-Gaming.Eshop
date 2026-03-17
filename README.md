@@ -12,6 +12,16 @@ The repository is structured like a production-style application rather than a t
 
 #
 
+## Default Account!
+
+## You can try to log-in with:
+
+### user@grindspot.com
+
+### Pass: useruser123
+
+#
+
 ## What The Project Includes:
 
 ### Storefront features
@@ -74,17 +84,17 @@ grindspot/
 |  |- prisma/
 |  |- scripts/
 |  |- src/
-|  |  |- bootstrap/
+|  |  |- appSetup/
 |  |  |- config/
 |  |  |- middleware/
-|  |  |- modules/
-|  |  |  |- adminCatalog/
+|  |  |- features/
+|  |  |  |- catalogManagement/
 |  |  |  |- auth/
 |  |  |  |- cart/
 |  |  |  |- categories/
 |  |  |  |- orders/
 |  |  |  |- products/
-|  |  |  |- storefront/
+|  |  |  |- shoppingState/
 |  |  |- utils/
 |  |  |- app.ts
 |  |  |- server.ts
@@ -124,9 +134,9 @@ grindspot/
 |  |  |  |  |- components/
 |  |  |  |  |  |- forms/
 |  |  |  |  |  |- payment/
-|  |  |  |  |  |- sections/
-|  |  |  |  |  |- states/
-|  |  |  |  |  |- summary/
+|  |  |  |  |  |- steps/
+|  |  |  |  |  |- fallbacks/
+|  |  |  |  |  |- orderReview/
 |  |  |  |  |- config/
 |  |  |  |  |- hooks/
 |  |  |  |  |- pages/
@@ -174,7 +184,7 @@ grindspot/
 |  |  |  |  |  |- components/
 |  |  |  |  |  |- hooks/
 |  |  |  |  |- routing/
-|  |  |  |- storefront/
+|  |  |  |- shopping/
 |  |  |  |  |- api/
 |  |  |  |  |- auth/
 |  |  |  |  |  |- hooks/
@@ -185,7 +195,7 @@ grindspot/
 |  |  |  |  |- utils/
 |  |  |  |  |- constants.ts
 |  |  |  |  |- queryKeys.ts
-|  |  |  |  |- storefront.ts
+|  |  |  |  |- index.ts
 |  |  |  |  |- types.ts
 |  |  |- types/
 |  |  |- ui/
@@ -210,7 +220,7 @@ from the tree above.
 
 - [backend/src/server.ts](backend/src/server.ts) bootstraps database connectivity and starts the HTTP server.
 - [backend/src/app.ts](backend/src/app.ts) wires middleware, API routes, Swagger, health checks, static assets, and SPA fallback behavior.
-- Feature modules live under `backend/src/modules/*` and follow a controller/service/dto/routes split.
+- Backend features live under `backend/src/features/*` and follow a controller/service/dto/routes split.
 
 ### Frontend runtime
 
@@ -218,7 +228,7 @@ from the tree above.
 - [frontend/src/app/App.tsx](frontend/src/app/App.tsx) composes application providers and the route tree.
 - [frontend/src/app/router/AppRouter.tsx](frontend/src/app/router/AppRouter.tsx) owns top-level routing.
 - Feature code lives under `frontend/src/features/*`. Folder shapes vary by domain, but each feature keeps its own `api/`, `hooks/`, `pages/`, optional `components/`, `utils/`, `config/`, and feature-local `constants.ts`, `queryKeys.ts`, and `types.ts` where needed.
-- Cross-feature code lives under `frontend/src/shared/*`. Shared cart and storefront logic are now explicitly split into `auth/` and `guest/` subfolders so authenticated and anonymous flows stay isolated.
+- Cross-feature code lives under `frontend/src/shared/*`. Shared cart and shopping logic are split into `auth/` and `guest/` subfolders so authenticated and anonymous flows stay isolated.
 
 ### Production shape
 

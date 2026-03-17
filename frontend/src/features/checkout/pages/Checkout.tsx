@@ -4,13 +4,13 @@
 import { getApiErrorMessage } from '@/shared/api/error';
 import { useCartData } from '@/features/cart/hooks/useCartData';
 import { CheckoutLoading } from '../components/CheckoutLoading';
-import { CheckoutHeader } from '../components/sections/CheckoutHeader';
-import { PaymentSection } from '../components/sections/PaymentSection';
-import { ShippingAddressSection } from '../components/sections/ShippingAddressSection';
-import { CheckoutEmptyState } from '../components/states/CheckoutEmptyState';
-import { CheckoutErrorState } from '../components/states/CheckoutErrorState';
-import { OrderItemsCard } from '../components/summary/OrderItemsCard';
-import { OrderSummaryCard } from '../components/summary/OrderSummaryCard';
+import { CheckoutHeader } from '../components/steps/CheckoutHeader';
+import { PaymentSection } from '../components/steps/PaymentSection';
+import { ShippingAddressSection } from '../components/steps/ShippingAddressSection';
+import { CheckoutEmptyState } from '../components/fallbacks/CheckoutEmptyState';
+import { CheckoutErrorState } from '../components/fallbacks/CheckoutErrorState';
+import { OrderItemsCard } from '../components/orderReview/OrderItemsCard';
+import { OrderSummaryCard } from '../components/orderReview/OrderSummaryCard';
 import { useCheckoutFlow } from '../hooks/useCheckoutFlow';
 
 // Orchestrates data loading and composes the checkout UI sections.
@@ -93,3 +93,4 @@ function Checkout() {
 }
 
 export default Checkout;
+

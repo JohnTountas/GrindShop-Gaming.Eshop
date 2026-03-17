@@ -4,12 +4,12 @@
 import { CSSProperties, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getApiErrorMessage } from "@/shared/api/error";
+import { OrdersPanel } from "@/shared/components/orders/OrdersPanel";
 import { LoadingOrders } from "../components/LoadingOrders";
 import { ORDER_STATUS_STYLES } from "../constants";
 import { useOrders } from "../hooks/useOrders";
+import { formatDate } from "@/shared/utils/formatDate";
 import { formatCurrency } from "@/shared/utils/formatCurrency";
-import { formatDate } from "../utils/formatDate";
-import { OrdersPanel } from "@/features/admin/components/OrdersPanel";
 
 type OrdersLocationState = {
   highlightOrderId?: string;
@@ -138,6 +138,7 @@ function Orders() {
         <>
           <OrdersPanel
             orders={orders}
+            orderStatusStyles={ORDER_STATUS_STYLES}
             title="Recent Orders"
             description={`${orders.length} total order${orders.length === 1 ? "" : "s"} on this account.`}
             highlightOrderId={highlightOrderId}
@@ -219,5 +220,6 @@ function Orders() {
 }
 
 export default Orders;
+
 
 

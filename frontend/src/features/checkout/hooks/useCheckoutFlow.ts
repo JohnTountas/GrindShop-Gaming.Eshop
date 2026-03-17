@@ -1,79 +1,53 @@
 /**
  * Checkout workflow hook.
  *
- * It keeps form state, payment validation, cache updates, and post-purchase
- * navigation in one place so the page component can stay mostly declarative.
+ * It keeps form state, payment orchestration, and post-purchase navigation in
+ * one place while delegating pure rules to smaller helpers.
  */
-import { useQueryClient } from "@tanstack/react-query";
-import { FormEvent, MouseEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { cartKey } from "@/features/cart/queryKeys";
-import { orderDetailKey, ordersKey } from "@/features/orders/queryKeys";
-import { persistGuestOrder } from "@/features/orders/utils/guestOrderStorage";
-import { clearGuestCart } from "@/shared/cart/guestCart";
-import { storefrontStateKey, wishlistProductsKey } from "@/shared/storefront/queryKeys";
-import type { StorefrontState } from "@/shared/storefront/types";
-import type { Cart, CartItem, Order, Product, ShippingAddress } from "@/shared/types";
-import { showSuccessMessage } from "@/shared/ui/toast";
-import { FOOTER_MESSAGE_EVENT, PAYMENT_OPTIONS } from "../constants";
-import type { CardPaymentDetails, PaymentMethod } from "../types";
-import { buildPaymentIntentId } from "../utils/buildPaymentIntentId";
-import { digitsOnly, formatCardExpiry } from "../utils/formatters";
+import { useQueryClient } from '@tanstack/react-query';
+import { type FormEvent, type MouseEvent, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { persistGuestOrder } from '@/features/orders/utils/guestOrderStorage';
+import { clearGuestCart } from '@/shared/cart/guestCart';
+import type { CartItem } from '@/shared/types';
+import { showSuccessMessage } from '@/shared/ui/toast';
+import { PAYMENT_OPTIONS } from '../constants';
+import {
+  getCheckoutInputClass,
+  INITIAL_CARD_DETAILS,
+  INITIAL_SHIPPING_ADDRESS,
+  isNumericShippingField,
+} from '../config/checkoutDefaults';
+import type { CardPaymentDetails, PaymentMethod } from '../types';
+import { buildPaymentIntentId } from '../utils/buildPaymentIntentId';
 import {
   buildPaymentPreview,
   calculateCheckoutTotals,
   getPaymentFingerprintSource,
   isShippingAddressComplete,
-} from "../utils/checkoutCalculations";
-import { isValidCardNumber, isValidEmail, isValidExpiry } from "../utils/validators";
-import { useCreateOrder } from "./useCreateOrder";
-
-const INITIAL_SHIPPING_ADDRESS: ShippingAddress = {
-  fullName: "",
-  address: "",
-  city: "",
-  state: "",
-  zipCode: "",
-  country: "",
-  phone: "",
-};
-
-const INITIAL_CARD_DETAILS: CardPaymentDetails = {
-  holderName: "",
-  number: "",
-  expiry: "",
-  cvv: "",
-};
-
-const INPUT_BASE_CLASS =
-  "mt-1.5 block w-full rounded-xl border px-3 py-2.5 text-sm text-primary-900 focus:outline-none";
-const INPUT_DEFAULT_CLASS =
-  "border-primary-300/70 bg-primary-100/72 placeholder:text-primary-600 focus:border-accent-700";
-const INPUT_MISSING_CLASS =
-  "border-red-300 bg-red-50 placeholder:text-red-500 focus:border-red-500";
+} from '../utils/checkoutCalculations';
+import { applySuccessfulCheckoutCacheUpdates } from '../utils/checkoutCache';
+import { dispatchCheckoutFooterMessage, type CheckoutFooterMessage } from '../utils/footerMessages';
+import { digitsOnly, formatCardExpiry } from '../utils/formatters';
+import { validateCheckoutPaymentStep } from '../utils/paymentValidation';
+import { useCreateOrder } from './useCreateOrder';
 
 interface UseCheckoutFlowOptions {
   authed: boolean;
   items: CartItem[];
 }
 
-type CheckoutFooterMessage = "termsOfService" | "privacySecurity";
-
-function isNumericShippingField(key: keyof ShippingAddress) {
-  return key === "zipCode" || key === "phone";
-}
-
 export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<ShippingAddress>(INITIAL_SHIPPING_ADDRESS);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>("CARD");
+  const [form, setForm] = useState(INITIAL_SHIPPING_ADDRESS);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('CARD');
   const [cardDetails, setCardDetails] = useState<CardPaymentDetails>(INITIAL_CARD_DETAILS);
-  const [walletEmail, setWalletEmail] = useState("");
-  const [bankTransferReference, setBankTransferReference] = useState("");
+  const [walletEmail, setWalletEmail] = useState('');
+  const [bankTransferReference, setBankTransferReference] = useState('');
   const [hasAuthorizedPayment, setHasAuthorizedPayment] = useState(false);
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
   const [showMissingFieldHints, setShowMissingFieldHints] = useState(false);
 
   const selectedPaymentOption =
@@ -82,70 +56,14 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
   const createOrderMutation = useCreateOrder({
     onSuccess: async (order) => {
       if (authed) {
-        const purchasedProductIds = new Set(order.items.map((item) => item.productId));
-
-        // Update the obvious client-side caches immediately so the checkout flow
-        // feels completed before the background refetches finish.
-        queryClient.setQueryData<Cart | undefined>(cartKey, (currentCart) => {
-          if (!currentCart) {
-            return currentCart;
-          }
-
-          return {
-            ...currentCart,
-            items: [],
-            total: 0,
-            updatedAt: new Date().toISOString(),
-          };
-        });
-
-        queryClient.setQueryData<StorefrontState | undefined>(
-          storefrontStateKey,
-          (currentState) => {
-            if (!currentState) {
-              return currentState;
-            }
-
-            return {
-              ...currentState,
-              wishlistProductIds: currentState.wishlistProductIds.filter(
-                (productId) => !purchasedProductIds.has(productId)
-              ),
-            };
-          }
-        );
-
-        queryClient.setQueryData<Product[] | undefined>(wishlistProductsKey, (currentProducts) => {
-          if (!currentProducts) {
-            return currentProducts;
-          }
-
-          return currentProducts.filter((product) => !purchasedProductIds.has(product.id));
-        });
-
-        queryClient.setQueryData<Order[] | undefined>(ordersKey, (currentOrders) => {
-          if (!currentOrders) {
-            return [order];
-          }
-
-          return [order, ...currentOrders.filter((currentOrder) => currentOrder.id !== order.id)];
-        });
-
-        queryClient.setQueryData(orderDetailKey(order.id), order);
-
-        await queryClient.invalidateQueries({ queryKey: cartKey });
-        await queryClient.invalidateQueries({ queryKey: storefrontStateKey });
-        await queryClient.invalidateQueries({ queryKey: wishlistProductsKey });
-        await queryClient.invalidateQueries({ queryKey: ordersKey });
+        await applySuccessfulCheckoutCacheUpdates(queryClient, order);
       }
 
-      // The toast gives both guest and signed-in flows the same success language,
-      // even though they branch to different destinations afterward.
       showSuccessMessage({
-        title: "Order placed successfully",
+        title: 'Order placed successfully',
         message: `Thank you for choosing GrindSpot. Your order is confirmed and our team is preparing it for fast dispatch. Payment authorized with ${selectedPaymentOption.label}.`,
-        tone: "success",
-        placement: "center",
+        tone: 'success',
+        placement: 'center',
         durationMs: 9000,
       });
 
@@ -156,7 +74,7 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
         return;
       }
 
-      navigate("/orders", {
+      navigate('/orders', {
         state: {
           highlightOrderId: order.id,
         },
@@ -170,6 +88,11 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
   const totals = calculateCheckoutTotals(items);
   const isShippingComplete = isShippingAddressComplete(form);
   const paymentInputsLocked = !isShippingComplete || createOrderMutation.isPending;
+
+  function clearValidationMessage() {
+    setErrorMessage('');
+  }
+
   const paymentPreview = buildPaymentPreview({
     selectedPaymentMethod,
     cardDetails,
@@ -177,68 +100,26 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
     bankTransferReference,
   });
 
-  function clearValidationMessage() {
-    setErrorMessage("");
-  }
-
-  function validatePaymentStep() {
-    // We validate in the same order the UI asks for input, so the first error
-    // the customer sees is the next actionable thing to fix.
-    if (!isShippingComplete) {
-      return "Please complete all shipping fields before payment confirmation.";
-    }
-
-    if (!hasAuthorizedPayment) {
-      return "You must authorize the payment amount to continue.";
-    }
-
-    if (!hasAcceptedPolicies) {
-      return "You must accept the Terms of Service and Privacy Policy to continue.";
-    }
-
-    if (selectedPaymentMethod === "CARD") {
-      if (!cardDetails.holderName.trim()) {
-        return "Cardholder name is required.";
-      }
-      if (!isValidCardNumber(cardDetails.number)) {
-        return "Enter a valid card number.";
-      }
-      if (!isValidExpiry(cardDetails.expiry)) {
-        return "Enter a valid card expiry in MM/YY format.";
-      }
-      if (!/^\d{3,4}$/.test(cardDetails.cvv)) {
-        return "Enter a valid card security code.";
-      }
-      return "";
-    }
-
-    if (selectedPaymentMethod === "BANK_TRANSFER") {
-      if (bankTransferReference.trim().length < 6) {
-        return "Bank transfer reference must be at least 6 characters.";
-      }
-      return "";
-    }
-
-    if (!isValidEmail(walletEmail)) {
-      return "Enter a valid wallet email address.";
-    }
-
-    return "";
-  }
-
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     clearValidationMessage();
     setShowMissingFieldHints(true);
 
-    const paymentValidationError = validatePaymentStep();
+    const paymentValidationError = validateCheckoutPaymentStep({
+      isShippingComplete,
+      hasAuthorizedPayment,
+      hasAcceptedPolicies,
+      selectedPaymentMethod,
+      cardDetails,
+      walletEmail,
+      bankTransferReference,
+    });
+
     if (paymentValidationError) {
       setErrorMessage(paymentValidationError);
       return;
     }
 
-    // We generate a deterministic fake payment intent for this demo flow so
-    // order creation still has a payment-shaped identifier attached to it.
     const paymentIntentId = buildPaymentIntentId(
       selectedPaymentMethod,
       getPaymentFingerprintSource({
@@ -249,9 +130,7 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
       })
     );
 
-    // Drop CVV from local React state as soon as the form is submitted. Even in
-    // a demo app, we should not keep sensitive fields around longer than needed.
-    setCardDetails((current) => ({ ...current, cvv: "" }));
+    setCardDetails((current) => ({ ...current, cvv: '' }));
     createOrderMutation.mutate({
       shippingAddress: form,
       paymentIntentId,
@@ -264,7 +143,7 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
     });
   }
 
-  function updateShippingField(key: keyof ShippingAddress, value: string) {
+  function updateShippingField(key: keyof typeof INITIAL_SHIPPING_ADDRESS, value: string) {
     clearValidationMessage();
     const nextValue = isNumericShippingField(key) ? digitsOnly(value) : value;
     setForm((current) => ({ ...current, [key]: nextValue }));
@@ -279,8 +158,8 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
     clearValidationMessage();
     setSelectedPaymentMethod(nextMethod);
 
-    if (nextMethod !== "CARD") {
-      setCardDetails((current) => ({ ...current, cvv: "" }));
+    if (nextMethod !== 'CARD') {
+      setCardDetails((current) => ({ ...current, cvv: '' }));
     }
   }
 
@@ -309,19 +188,13 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
   }
 
   function getInputClass(value: string, highlightMissing = false) {
-    return `${INPUT_BASE_CLASS} ${
-      highlightMissing && isMissingValue(value) ? INPUT_MISSING_CLASS : INPUT_DEFAULT_CLASS
-    }`;
+    return getCheckoutInputClass(value, highlightMissing, isMissingValue(value));
   }
 
   function openFooterMessage(event: MouseEvent<HTMLButtonElement>, message: CheckoutFooterMessage) {
     event.preventDefault();
     event.stopPropagation();
-    window.dispatchEvent(
-      new CustomEvent(FOOTER_MESSAGE_EVENT, {
-        detail: message,
-      })
-    );
+    dispatchCheckoutFooterMessage(message);
   }
 
   return {
@@ -346,15 +219,15 @@ export function useCheckoutFlow({ authed, items }: UseCheckoutFlowOptions) {
     updateBankTransferReference,
     updateAuthorizedPayment,
     updateAcceptedPolicies,
-    updateCardHolderName: (value: string) => updateCardField("holderName", value),
-    updateCardNumber: (value: string) => updateCardField("number", digitsOnly(value).slice(0, 19)),
-    updateCardExpiry: (value: string) => updateCardField("expiry", formatCardExpiry(value)),
-    updateCardCvv: (value: string) => updateCardField("cvv", digitsOnly(value).slice(0, 4)),
+    updateCardHolderName: (value: string) => updateCardField('holderName', value),
+    updateCardNumber: (value: string) => updateCardField('number', digitsOnly(value).slice(0, 19)),
+    updateCardExpiry: (value: string) => updateCardField('expiry', formatCardExpiry(value)),
+    updateCardCvv: (value: string) => updateCardField('cvv', digitsOnly(value).slice(0, 4)),
     isMissingValue,
     getInputClass,
     openTermsOfServiceMessage: (event: MouseEvent<HTMLButtonElement>) =>
-      openFooterMessage(event, "termsOfService"),
+      openFooterMessage(event, 'termsOfService'),
     openPrivacyPolicyMessage: (event: MouseEvent<HTMLButtonElement>) =>
-      openFooterMessage(event, "privacySecurity"),
+      openFooterMessage(event, 'privacySecurity'),
   };
 }

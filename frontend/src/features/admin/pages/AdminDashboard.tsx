@@ -4,7 +4,8 @@
 import { useMemo, useState } from 'react';
 import type { Product } from '@/shared/types';
 import { getApiErrorMessage } from '@/shared/api/error';
-import { OrdersPanel } from '../components/OrdersPanel';
+import { OrdersPanel } from '@/shared/components/orders/OrdersPanel';
+import { ORDER_STATUSES, ORDER_STATUS_STYLES } from '../constants';
 import { ProductSelector } from '../components/ProductSelector';
 import { ReviewsEditor } from '../components/ReviewsEditor';
 import { SpecificationsEditor } from '../components/SpecificationsEditor';
@@ -119,6 +120,8 @@ function AdminDashboard() {
 
       <OrdersPanel
         orders={orders}
+        orderStatusStyles={ORDER_STATUS_STYLES}
+        availableStatuses={ORDER_STATUSES}
         onUpdateStatus={(orderId, status) =>
           updateOrderStatusMutation.mutate({ orderId, status })
         }

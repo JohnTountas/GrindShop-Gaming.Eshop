@@ -1,24 +1,24 @@
 /**
- * Assemble the Express app from small bootstrap modules.
+ * Assemble the Express app from small setup modules.
  *
  * The goal here is readability: routing, docs, static assets, and middleware
  * registration each live in their own focused setup file.
  */
 import express from 'express';
 import { errorHandler } from './middleware/error.middleware';
-import { registerApiFeatureRoutes } from './bootstrap/apiRoutes';
-import { buildApplicationSetupConfig } from './bootstrap/config';
+import { registerApiFeatureRoutes } from './appSetup/apiRoutes';
+import { buildApplicationSetupConfig } from './appSetup/config';
 import {
   registerApiDocumentation,
   registerHealthCheckRoute,
   registerRootRoute,
-} from './bootstrap/documentation';
+} from './appSetup/documentation';
 import {
   hasFrontendBuild,
   registerFrontendRoutes,
   registerNotFoundRoute,
-} from './bootstrap/frontend';
-import { registerCoreMiddleware, registerUploadStaticRoute } from './bootstrap/middleware';
+} from './appSetup/frontend';
+import { registerCoreMiddleware, registerUploadStaticRoute } from './appSetup/middleware';
 
 function createExpressApplication() {
   const setupConfig = buildApplicationSetupConfig();
@@ -61,3 +61,4 @@ function createExpressApplication() {
 const app = createExpressApplication();
 
 export default app;
+

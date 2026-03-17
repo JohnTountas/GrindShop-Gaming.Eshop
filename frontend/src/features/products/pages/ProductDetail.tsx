@@ -1,31 +1,36 @@
 /**
  * Conversion-focused product detail page with persisted wishlist/compare and real specs/reviews.
  */
-import { useMemo, useState } from "react";
-import type { MouseEvent } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { getApiErrorMessage } from "@/shared/api/error";
-import { addGuestCartItem } from "@/shared/cart/guestCart";
-import { isAuthenticated } from "@/shared/auth/session";
+import { useMemo, useState } from 'react';
+import type { MouseEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getApiErrorMessage } from '@/shared/api/error';
+import { addGuestCartItem } from '@/shared/cart/guestCart';
+import { isAuthenticated } from '@/shared/auth/session';
+import {
+  buildTechnicalSpecs,
+  getCompatibilityTags,
+  useCompare,
+  useWishlist,
+} from '@/shared/shopping';
 import {
   showCartAddedToast,
   showCompareAddedToast,
   showWishlistAddedToast,
-} from "@/shared/ui/toast";
-import {
-  buildReviewSnapshot,
-  buildTechnicalSpecs,
-  getCompatibilityTags,
-  getProductBrand,
-  useCompare,
-  useWishlist,
-} from "@/shared/storefront/storefront";
-import { useProduct } from "../hooks/useProduct";
-import { useRelatedProducts } from "../hooks/useRelatedProducts";
-import { useQuickAddToCart } from "../hooks/useQuickAddToCart";
-import { formatCurrency } from "@/shared/utils/formatCurrency";
+} from '@/shared/ui/toast';
+import { useProduct } from '../hooks/useProduct';
+import { useRelatedProducts } from '../hooks/useRelatedProducts';
+import { useQuickAddToCart } from '../hooks/useQuickAddToCart';
+import { buildProductReviewSummary, getRelatedProducts } from '../utils/productDetail';
+import { LoadingProductDetail } from '../components/LoadingProductDetail';
+import { MobilePurchaseBar } from '../components/detail/MobilePurchaseBar';
+import { ProductDetailHeader } from '../components/detail/ProductDetailHeader';
+import { ProductGallery } from '../components/detail/ProductGallery';
+import { ProductPurchaseCard } from '../components/detail/ProductPurchaseCard';
+import { ProductReviewsCard } from '../components/detail/ProductReviewsCard';
+import { ProductSpecificationsCard } from '../components/detail/ProductSpecificationsCard';
+import { RelatedProductsSection } from '../components/detail/RelatedProductsSection';
 
-// Loads one product, manages interactive purchase actions, and renders deep product context.
 function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -33,24 +38,21 @@ function ProductDetail() {
   const compare = useCompare();
   const authed = isAuthenticated();
 
-  // Local UI feedback + interactive zoom state for the hero image.
-  const [status, setStatus] = useState("");
-  const [pendingAction, setPendingAction] = useState<"add" | "buy" | null>(null);
+  const [status, setStatus] = useState('');
+  const [pendingAction, setPendingAction] = useState<'add' | 'buy' | null>(null);
   const [isLoupeActive, setIsLoupeActive] = useState(false);
   const [loupeOrigin, setLoupeOrigin] = useState({ x: 50, y: 50 });
 
-  // Fetch the selected product by route id.
   const productQuery = useProduct(id);
   const relatedQuery = useRelatedProducts(id, productQuery.data?.category?.slang);
 
-  // Purchase CTA mutation used by both desktop and mobile action bars.
   const addToCart = useQuickAddToCart({
     onSuccess: () => {
-      showCartAddedToast(productQuery.data?.title ?? "Product");
+      showCartAddedToast(productQuery.data?.title ?? 'Product');
       setStatus(
-        pendingAction === "buy"
-          ? `${productQuery.data?.title ?? "Item"} added to cart. Redirecting to checkout.`
-          : `${productQuery.data?.title ?? "Item"} added to cart.`
+        pendingAction === 'buy'
+          ? `${productQuery.data?.title ?? 'Item'} added to cart. Redirecting to checkout.`
+          : `${productQuery.data?.title ?? 'Item'} added to cart.`
       );
     },
     onError: (message) => setStatus(message),
@@ -59,77 +61,30 @@ function ProductDetail() {
 
   const product = productQuery.data;
 
-  // Exclude the current product and limit related cards for a compact section.
-  const relatedProducts = useMemo(() => {
-    const list = relatedQuery.data ?? [];
-    return list.filter((item) => item.id !== id).slice(0, 4);
-  }, [relatedQuery.data, id]);
+  const relatedProducts = useMemo(
+    () => getRelatedProducts(relatedQuery.data, id),
+    [relatedQuery.data, id]
+  );
 
-  // Use persisted specifications when available; otherwise derive storefront defaults.
   const specs = useMemo(() => {
     if (!product) {
       return [];
     }
+
     if (product.specifications && product.specifications.length > 0) {
       return [...product.specifications].sort((a, b) => a.position - b.position);
     }
+
     return buildTechnicalSpecs(product);
   }, [product]);
 
-  // Normalize review aggregates for star rating and breakdown visualizations.
-  const review = useMemo(() => {
-    if (!product) {
-      return null;
-    }
-    const reviews = product.reviews ?? [];
-    if (reviews.length === 0) {
-      return buildReviewSnapshot(product);
-    }
-
-    const totalReviews = reviews.length;
-    const averageRating =
-      reviews.reduce((sum, item) => sum + Number(item.rating), 0) / Math.max(1, totalReviews);
-    const breakdown = [5, 4, 3, 2, 1].map((stars) => {
-      const count = reviews.filter((item) => item.rating === stars).length;
-      return {
-        stars,
-        count,
-        percent: Math.round((count / totalReviews) * 100),
-      };
-    });
-
-    return {
-      rating: Number(averageRating.toFixed(1)),
-      totalReviews,
-      breakdown,
-      quotes: reviews.slice(0, 3).map((item) => item.comment),
-    };
-  }, [product]);
+  const review = useMemo(() => (product ? buildProductReviewSummary(product) : null), [product]);
 
   if (productQuery.isLoading) {
-    return (
-      <section className="space-y-5">
-        <div className="surface-card p-5">
-          <div className="skeleton h-8 w-1/2" />
-          <div className="mt-3 skeleton h-4 w-2/3" />
-        </div>
-        <div className="grid gap-5 lg:grid-cols-12">
-          <div className="surface-card p-4 lg:col-span-7">
-            <div className="skeleton aspect-[4/3] w-full rounded-2xl" />
-          </div>
-          <div className="surface-card p-5 lg:col-span-5">
-            <div className="space-y-3">
-              <div className="skeleton h-4 w-1/3" />
-              <div className="skeleton h-8 w-4/5" />
-              <div className="skeleton h-4 w-full" />
-            </div>
-          </div>
-        </div>
-      </section>
-    );
+    return <LoadingProductDetail />;
   }
 
-  if (productQuery.isError || !product) {
+  if (productQuery.isError || !product || !review) {
     return (
       <div
         role="alert"
@@ -137,7 +92,7 @@ function ProductDetail() {
       >
         <p className="font-semibold">Unable to load this product</p>
         <p className="mt-1 text-sm">
-          {getApiErrorMessage(productQuery.error, "Failed to load product")}
+          {getApiErrorMessage(productQuery.error, 'Failed to load product')}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -158,97 +113,88 @@ function ProductDetail() {
     );
   }
 
-  const inStock = product.stock > 0;
-  const productId = product.id;
+  const resolvedProduct = product;
+  const inStock = resolvedProduct.stock > 0;
+  const productId = resolvedProduct.id;
   const wishlisted = authed && wishlist.ids.includes(productId);
   const compared = compare.ids.includes(productId);
-  const compatibility = getCompatibilityTags(product);
-  const isAddingToCart = pendingAction === "add" && (!authed || addToCart.isPending);
-  const isBuyingNow = pendingAction === "buy" && (!authed || addToCart.isPending);
+  const compatibilityTags = getCompatibilityTags(resolvedProduct);
+  const isAddingToCart = pendingAction === 'add' && (!authed || addToCart.isPending);
+  const isBuyingNow = pendingAction === 'buy' && (!authed || addToCart.isPending);
   const isCartActionPending = isAddingToCart || isBuyingNow;
 
-  // Toggles wishlist membership for the current signed-in product.
   async function toggleWishlist() {
     try {
       const result = await wishlist.toggle(productId);
       if (result.added) {
-        showWishlistAddedToast(productQuery.data?.title ?? "Product");
-        setStatus("Added to wishlist.");
+        showWishlistAddedToast(resolvedProduct.title);
+        setStatus('Added to wishlist.');
         return;
       }
-      setStatus("Removed from wishlist.");
+      setStatus('Removed from wishlist.');
     } catch (error) {
-      setStatus(getApiErrorMessage(error, "Unable to update wishlist"));
+      setStatus(getApiErrorMessage(error, 'Unable to update wishlist'));
     }
   }
 
-  // Adds or removes the current product from compare state and reports capacity limits.
   async function toggleCompare() {
     try {
       const result = await compare.toggle(productId);
       if (result.added) {
-        showCompareAddedToast(productQuery.data?.title ?? "Product");
+        showCompareAddedToast(resolvedProduct.title);
         setStatus(
-          result.reachedLimit ? "Added to compare. Only 4 products supported." : "Added to compare."
+          result.reachedLimit ? 'Added to compare. Only 4 products supported.' : 'Added to compare.'
         );
         return;
       }
-      setStatus("Removed from compare.");
+      setStatus('Removed from compare.');
     } catch (error) {
-      setStatus(getApiErrorMessage(error, "Unable to update compare list"));
+      setStatus(getApiErrorMessage(error, 'Unable to update compare list'));
     }
   }
 
-  // Adds the current product to either the member cart or guest cart storage.
   function handleAddToCart() {
-    if (!product) {
-      return;
-    }
-    setPendingAction("add");
+    setPendingAction('add');
+
     if (!authed) {
       try {
-        addGuestCartItem(product, 1);
-        showCartAddedToast(product.title);
-        setStatus(`${product.title} added to cart.`);
+        addGuestCartItem(resolvedProduct, 1);
+        showCartAddedToast(resolvedProduct.title);
+        setStatus(`${resolvedProduct.title} added to cart.`);
       } catch (error) {
-        setStatus(getApiErrorMessage(error, "Failed to add item"));
+        setStatus(getApiErrorMessage(error, 'Failed to add item'));
       } finally {
         setPendingAction(null);
       }
       return;
     }
-    addToCart.mutate(product.id);
+
+    addToCart.mutate(resolvedProduct.id);
   }
 
-  // Adds the current product to cart and advances directly to checkout.
   async function handleBuyNow() {
-    if (!product) {
-      return;
-    }
-
-    setPendingAction("buy");
+    setPendingAction('buy');
 
     if (!authed) {
       try {
-        addGuestCartItem(product, 1);
-        showCartAddedToast(product.title);
-        navigate("/checkout");
+        addGuestCartItem(resolvedProduct, 1);
+        showCartAddedToast(resolvedProduct.title);
+        navigate('/checkout');
       } catch (error) {
-        setStatus(getApiErrorMessage(error, "Unable to start checkout"));
+        setStatus(getApiErrorMessage(error, 'Unable to start checkout'));
         setPendingAction(null);
       }
       return;
     }
 
     try {
-      await addToCart.mutateAsync(product.id);
-      navigate("/checkout");
+      await addToCart.mutateAsync(resolvedProduct.id);
+      navigate('/checkout');
     } catch {
       // Shared mutation callbacks already surface status messages.
     }
   }
 
-  // Toggles image loupe mode so users can inspect product details closely.
   function toggleLoupe() {
     setIsLoupeActive((current) => {
       if (current) {
@@ -258,7 +204,6 @@ function ProductDetail() {
     });
   }
 
-  // Tracks pointer position to update zoom focus while loupe mode is active.
   function handleLoupePointerMove(event: MouseEvent<HTMLDivElement>) {
     if (!isLoupeActive) {
       return;
@@ -274,43 +219,17 @@ function ProductDetail() {
     });
   }
 
-  // Resets loupe focus to center when pointer exits the image frame.
   function handleLoupePointerLeave() {
     if (!isLoupeActive) {
       return;
     }
+
     setLoupeOrigin({ x: 50, y: 50 });
   }
 
   return (
     <section className="space-y-6 pb-32 sm:pb-24 lg:pb-6">
-      <header className="surface-card flex flex-wrap items-center justify-between gap-3 p-5">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-700">
-            Product detail
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-primary-900 sm:text-3xl">
-            {product.title}
-          </h1>
-          <p className="mt-1 text-sm text-primary-600">
-            {getProductBrand(product)} | {product.category?.name ?? "Gaming"}
-          </p>
-        </div>
-        <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap">
-          <Link
-            to="/"
-            className="rounded-full border border-primary-400/70 bg-primary-100/72 px-4 py-2.5 text-center text-sm font-semibold text-primary-800"
-          >
-            Continue shopping
-          </Link>
-          <Link
-            to="/cart"
-            className="rounded-full bg-primary-800 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-neon"
-          >
-            View cart
-          </Link>
-        </div>
-      </header>
+      <ProductDetailHeader product={resolvedProduct} />
 
       {status && (
         <p className="surface-card border border-accent-700/45 bg-accent-700/10 p-3 text-sm font-semibold text-primary-900">
@@ -319,239 +238,50 @@ function ProductDetail() {
       )}
 
       <div className="grid gap-5 lg:grid-cols-12">
-        <article className="surface-card p-4 lg:col-span-7">
-          <div
-            className={`product-image-frame loupe-frame relative rounded-2xl border border-primary-300/70 bg-primary-100/68 ${
-              isLoupeActive ? "is-loupe-active" : ""
-            }`}
-            role="button"
-            tabIndex={0}
-            aria-label={isLoupeActive ? "Disable image loupe mode" : "Enable image loupe mode"}
-            aria-pressed={isLoupeActive}
-            onClick={toggleLoupe}
-            onMouseMove={handleLoupePointerMove}
-            onMouseLeave={handleLoupePointerLeave}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                toggleLoupe();
-              }
-            }}
-          >
-            <img
-              src={product.images[0]}
-              alt={product.title}
-              className="product-image-zoom h-full w-full object-cover"
-              style={{
-                transformOrigin: `${loupeOrigin.x}% ${loupeOrigin.y}%`,
-              }}
-            />
+        <ProductGallery
+          title={resolvedProduct.title}
+          imageSrc={resolvedProduct.images[0]}
+          categoryLabel={resolvedProduct.category?.name ?? 'Collection'}
+          compatibilityTags={compatibilityTags}
+          isLoupeActive={isLoupeActive}
+          loupeOrigin={loupeOrigin}
+          onToggleLoupe={toggleLoupe}
+          onPointerMove={handleLoupePointerMove}
+          onPointerLeave={handleLoupePointerLeave}
+        />
 
-            <span className="absolute left-3 top-3 rounded-full border border-primary-300/50  px-2.5 py-1 text-[12px] font-bold uppercase tracking-[0.11em] text-blue-700 shadow-sm bg-slate-100">
-              {product.category?.name ?? "Collection"}
-            </span>
-            <span className="pointer-events-none absolute bottom-3 right-3 rounded-full border border-primary-300/55 bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.11em] text-blue-700 shadow-sm">
-              {isLoupeActive ? "Zoom on" : "Click for Zoom"}
-            </span>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-primary-600">
-            {compatibility.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-primary-300/70 bg-primary-100/70 px-3 py-1"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </article>
-
-        <aside className="space-y-4 lg:col-span-5">
-          <div className="surface-card space-y-4 p-5 lg:sticky lg:top-28">
-            <p className="text-sm leading-relaxed text-primary-600">{product.description}</p>
-            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-3xl font-bold text-primary-900">
-                  {formatCurrency(Number(product.price))}
-                </p>
-              </div>
-              <p
-                className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                  inStock
-                    ? "border-accent-600/55 bg-accent-600/12 text-accent-600"
-                    : "border-red-300/70 bg-red-900/25 text-red-100"
-                }`}
-              >
-                {inStock ? `${product.stock} in stock` : "Out of stock"}
-              </p>
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isCartActionPending || !inStock}
-                className="catalog-action-button rounded-xl bg-primary-800 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-60"
-              >
-                {isAddingToCart ? "Adding..." : inStock ? "Add to cart" : "Out of stock"}
-              </button>
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={isCartActionPending || !inStock}
-                className="rounded-xl border border-primary-400/70 bg-primary-100/72 px-4 py-3 text-center text-sm font-semibold text-primary-800 disabled:opacity-60"
-              >
-                {isBuyingNow ? "Opening checkout..." : "Buy now"}
-              </button>
-            </div>
-
-            <div className={`grid gap-2 ${authed ? "sm:grid-cols-2" : ""}`}>
-              {authed && (
-                <button
-                  type="button"
-                  onClick={toggleWishlist}
-                  className={`catalog-action-button rounded-xl border px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] ${
-                    wishlisted
-                      ? "border-accent-700/70 bg-accent-700/18 text-accent-700"
-                      : "border-primary-400/70 bg-primary-100/72 text-primary-700"
-                  }`}
-                >
-                  {wishlisted ? "Wishlisted" : "Add to wishlist"}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={toggleCompare}
-                className={`catalog-action-button rounded-xl border px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] ${
-                  compared
-                    ? "border-primary-800/80 bg-primary-800/25 text-primary-900"
-                    : "border-primary-400/70 bg-primary-100/72 text-primary-700"
-                }`}
-              >
-                {compared ? "Comparing" : "Compare"}
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-primary-300/70 bg-primary-100/70 p-3 text-center text-xs font-semibold uppercase tracking-[0.14em] text-primary-600 sm:text-left">
-              Visa • Mastercard • PayPal • Apple Pay • Google Pay
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary-600">
-              <p className="rounded-full border border-primary-300/70 bg-primary-100/70 px-3 py-1">
-                2-year warranty
-              </p>
-              <p className="rounded-full border border-primary-300/70 bg-primary-100/70 px-3 py-1">
-                30-day returns
-              </p>
-              <p className="rounded-full border border-primary-300/70 bg-primary-100/70 px-3 py-1">
-                Secure checkout
-              </p>
-            </div>
-          </div>
-        </aside>
+        <ProductPurchaseCard
+          product={resolvedProduct}
+          inStock={inStock}
+          authed={authed}
+          wishlisted={wishlisted}
+          compared={compared}
+          isCartActionPending={isCartActionPending}
+          isAddingToCart={isAddingToCart}
+          isBuyingNow={isBuyingNow}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+          onToggleWishlist={toggleWishlist}
+          onToggleCompare={toggleCompare}
+        />
       </div>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <article className="surface-card p-5">
-          <h2 className="text-xl font-semibold text-primary-900">Technical specifications</h2>
-          <div className="mt-3 space-y-2">
-            {specs.map((spec) => (
-              <div
-                key={spec.label}
-                className="flex flex-col items-start gap-1 rounded-xl border border-primary-300/70 bg-primary-100/68 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <p className="text-sm font-semibold text-primary-700">{spec.label}</p>
-                <p className="text-sm text-primary-900">{spec.value}</p>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="surface-card p-5">
-          <h2 className="text-xl font-semibold text-primary-900">Reviews and rating breakdown</h2>
-          <p className="mt-2 text-3xl font-bold text-primary-900">
-            {(review?.rating ?? 4.7).toFixed(1)} / 5
-          </p>
-          <p className="text-sm text-primary-600">{review?.totalReviews ?? 0} verified reviews</p>
-          <div className="mt-3 space-y-2">
-            {review?.breakdown.map((row) => (
-              <div
-                key={row.stars}
-                className="grid grid-cols-[54px_minmax(0,1fr)_40px] items-center gap-2 sm:grid-cols-[60px_1fr_42px]"
-              >
-                <p className="text-xs font-semibold text-primary-700">{row.stars} stars</p>
-                <div className="h-2 rounded-full bg-primary-200">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary-800 to-accent-700"
-                    style={{ width: `${row.percent}%` }}
-                  />
-                </div>
-                <p className="text-xs font-semibold text-primary-600">{row.percent}%</p>
-              </div>
-            ))}
-          </div>
-        </article>
+        <ProductSpecificationsCard specifications={specs} />
+        <ProductReviewsCard review={review} />
       </section>
 
-      <section className="surface-card p-5">
-        <h2 className="text-xl font-semibold text-primary-900">Related products</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {relatedProducts.map((item) => (
-            <article
-              key={item.id}
-              className="rounded-2xl border border-primary-300/70 bg-primary-100/70 p-3"
-            >
-              <div className="product-image-frame rounded-xl">
-                <img
-                  src={item.images[0]}
-                  alt={item.title}
-                  className="product-image-zoom h-36 w-full object-cover"
-                />
-              </div>
-              <h3 className="mt-2 text-sm font-semibold text-primary-900">{item.title}</h3>
-              <p className="mt-1 text-sm font-semibold text-primary-900">
-                {formatCurrency(Number(item.price))}
-              </p>
-              <Link
-                to={`/products/${item.id}`}
-                className="catalog-action-button mt-2 inline-flex w-full justify-center rounded-lg border border-primary-400/70 bg-primary-100/72 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-primary-800"
-              >
-                View
-              </Link>
-            </article>
-          ))}
-        </div>
-      </section>
+      <RelatedProductsSection products={relatedProducts} />
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-primary-300/70 bg-primary-50/95 p-3 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-1 text-xs font-semibold uppercase tracking-[0.1em] text-primary-600">
-              {product.title}
-            </p>
-            <p className="text-lg font-bold text-primary-900">
-              {formatCurrency(Number(product.price))}
-            </p>
-          </div>
-          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={!inStock || isCartActionPending}
-              className="catalog-action-button rounded-xl bg-primary-800 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {isAddingToCart ? "Adding..." : "Add to cart"}
-            </button>
-            <button
-              type="button"
-              onClick={handleBuyNow}
-              disabled={!inStock || isCartActionPending}
-              className="catalog-action-button rounded-xl border border-primary-400/70 bg-primary-100/72 px-4 py-2.5 text-sm font-semibold text-primary-800 disabled:opacity-60"
-            >
-              {isBuyingNow ? "Checkout..." : "Buy now"}
-            </button>
-          </div>
-        </div>
-      </div>
+      <MobilePurchaseBar
+        product={resolvedProduct}
+        inStock={inStock}
+        isCartActionPending={isCartActionPending}
+        isAddingToCart={isAddingToCart}
+        isBuyingNow={isBuyingNow}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+      />
     </section>
   );
 }

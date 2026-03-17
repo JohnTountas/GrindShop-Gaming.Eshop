@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { getApiErrorMessage } from '@/shared/api/error';
-import { useWishlist } from '@/shared/storefront/storefront';
+import { useWishlist } from '@/shared/shopping';
 import { showCartAddedToast } from '@/shared/ui/toast';
 import { Product } from '@/shared/types';
 import { LoadingWishlist } from '../components/LoadingWishlist';
@@ -203,5 +203,6 @@ function Wishlist() {
 }
 
 export default Wishlist;
+
 
 

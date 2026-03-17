@@ -3,11 +3,11 @@
  */
 import { Link, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "@/shared/api/error";
+import { formatDate } from "@/shared/utils/formatDate";
 import { LoadingOrderDetail } from "../components/LoadingOrderDetail";
 import { ORDER_STATUS_STYLES } from "../constants";
 import { useOrderDetail } from "../hooks/useOrderDetail";
 import { formatCurrency } from "@/shared/utils/formatCurrency";
-import { formatDate } from "../utils/formatDate";
 
 // Presents a full order breakdown including shipping, line items, and totals.
 function OrderDetail() {

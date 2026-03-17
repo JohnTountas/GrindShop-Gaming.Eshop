@@ -9,7 +9,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { clearSession, getStoredUser, isAuthenticated } from "@/shared/auth/session";
 import { useCartData } from "@/features/cart/hooks/useCartData";
 import ToastHost from "@/shared/components/feedback/ToastHost";
-import { useWishlist } from "@/shared/storefront/storefront";
+import { useWishlist } from "@/shared/shopping";
 import { showSuccessMessage } from "@/shared/ui/toast";
 import LayoutFooter from "./components/LayoutFooter";
 import LayoutHeader from "./components/LayoutHeader";
@@ -99,3 +99,4 @@ function Layout() {
 }
 
 export default Layout;
+

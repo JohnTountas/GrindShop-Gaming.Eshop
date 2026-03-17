@@ -40,7 +40,7 @@ export function PaymentConfirmationPanel({
   return (
     <>
       <div className="rounded-2xl border border-primary-300/70 bg-primary-100/72 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-700">
           Security and compliance confirmation
         </p>
         <div className="mt-2 space-y-2">
@@ -122,7 +122,7 @@ export function PaymentConfirmationPanel({
                 aria-hidden
                 className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/35 border-t-white"
               />
-              Authorizing payment
+              Authorizing payment...
             </span>
           ) : (
             "Confirm payment and place order"

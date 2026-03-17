@@ -2,8 +2,8 @@
  * Public order confirmation page for guest checkout.
  */
 import { Link, useParams } from "react-router-dom";
+import { formatDate } from "@/shared/utils/formatDate";
 import { ORDER_STATUS_STYLES } from "../constants";
-import { formatDate } from "../utils/formatDate";
 import { readGuestOrder } from "../utils/guestOrderStorage";
 import { formatCurrency } from "@/shared/utils/formatCurrency";
 

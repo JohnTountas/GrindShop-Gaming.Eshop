@@ -1,8 +1,8 @@
 /**
  * Payment option selector used by the confirmation step.
  */
-import { PAYMENT_OPTIONS } from '../../constants';
-import type { PaymentMethod } from '../../types';
+import { PAYMENT_OPTIONS } from "../../constants";
+import type { PaymentMethod } from "../../types";
 
 interface PaymentMethodSelectorProps {
   paymentInputsLocked: boolean;
@@ -26,9 +26,9 @@ export function PaymentMethodSelector({
             key={option.id}
             className={`block rounded-2xl border p-3 transition ${
               selected
-                ? 'border-accent-700/60 bg-accent-700/8'
-                : 'border-primary-300/70 bg-primary-100/72'
-            } ${paymentInputsLocked ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                ? "border-accent-700/60 bg-accent-700/8"
+                : "border-primary-300/70 bg-primary-100/72"
+            } ${paymentInputsLocked ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
           >
             <span className="flex items-start gap-3">
               <input
@@ -41,9 +41,9 @@ export function PaymentMethodSelector({
                 disabled={paymentInputsLocked}
               />
               <span>
-                <span className="block text-sm font-semibold text-primary-900">{option.label}</span>
-                <span className="mt-0.5 block text-xs text-primary-600">{option.description}</span>
-                <span className="mt-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-500">
+                <span className="block text-sm font-semibold text-stone-300">{option.label}</span>
+                <span className="mt-0.5 block text-xs text-primary-700">{option.description}</span>
+                <span className="mt-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-500">
                   {option.complianceNote}
                 </span>
               </span>
