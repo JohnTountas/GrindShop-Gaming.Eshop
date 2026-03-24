@@ -6,7 +6,8 @@
  */
 import { useQueryClient } from "@tanstack/react-query";
 import { Outlet, useNavigate } from "react-router-dom";
-import { clearSession, getStoredUser, isAuthenticated } from "@/shared/auth/session";
+import { logout } from "@/features/auth/api/auth";
+import { clearSession, useAuthSession } from "@/shared/auth/session";
 import { useCartData } from "@/features/cart/hooks/useCartData";
 import ToastHost from "@/shared/components/feedback/ToastHost";
 import { useWishlist } from "@/shared/shopping";
@@ -21,8 +22,7 @@ import { useGuestCartSync } from "@/shared/cart/auth/hooks/useGuestCartSync";
 function Layout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const authed = isAuthenticated();
-  const user = getStoredUser();
+  const { authed, user } = useAuthSession();
   const { cart } = useCartData();
   const currentYear = new Date().getFullYear();
   const wishlist = useWishlist();
@@ -43,8 +43,8 @@ function Layout() {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }
 
-  // Logout is handled optimistically on the client because all auth state lives
-  // in local storage plus refresh cookies managed elsewhere.
+  // Logout immediately drops client session state, then clears the refresh cookie
+  // in the background so stale requests cannot restore the previous session.
   function handleLogout() {
     const logoutUsername =
       displayName || user?.email?.split("@")[0]?.trim() || user?.email || "User";
@@ -56,7 +56,9 @@ function Layout() {
     });
 
     clearSession();
-    navigate("/login");
+    queryClient.clear();
+    navigate("/login", { replace: true });
+    void logout().catch(() => undefined);
   }
 
   return (

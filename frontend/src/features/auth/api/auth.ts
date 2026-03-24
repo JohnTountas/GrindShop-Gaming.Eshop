@@ -16,3 +16,8 @@ export async function register(payload: RegisterData): Promise<AuthResponse> {
   return response.data;
 }
 
+// Clears the refresh-token cookie on the server during logout.
+export async function logout(): Promise<void> {
+  await api.post('/auth/logout');
+}
+

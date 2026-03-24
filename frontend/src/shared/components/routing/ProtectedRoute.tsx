@@ -3,7 +3,7 @@
  */
 import { ReactElement } from 'react';
 import { Navigate } from 'react-router-dom';
-import { getStoredUser, isAuthenticated } from '@/shared/auth/session';
+import { useAuthSession } from '@/shared/auth/session';
 
 // Props supported by the ProtectedRoute guard.
 interface ProtectedRouteProps {
@@ -13,8 +13,7 @@ interface ProtectedRouteProps {
 
 // Guards route access and redirects unauthorized users to safe entry points.
 function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
-  const authed = isAuthenticated();
-  const user = getStoredUser();
+  const { authed, user } = useAuthSession();
 
   if (!authed) {
     return <Navigate to="/login" replace />;

@@ -1,9 +1,9 @@
-import { isAuthenticated } from '@/shared/auth/session';
+import { useAuthSession } from '@/shared/auth/session';
 import { defaultStorefrontState } from '../constants';
 import { useAuthenticatedStorefrontState } from '../auth/hooks/useAuthenticatedStorefrontState';
 
 export function useStorefrontState() {
-  const authed = isAuthenticated();
+  const { authed } = useAuthSession();
   const storefrontQuery = useAuthenticatedStorefrontState(authed);
 
   return {

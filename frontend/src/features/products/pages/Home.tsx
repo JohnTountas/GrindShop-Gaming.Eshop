@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { Product } from '@/shared/types';
 import { getApiErrorMessage } from '@/shared/api/error';
 import { addGuestCartItem } from '@/shared/cart/guestCart';
-import { isAuthenticated } from '@/shared/auth/session';
+import { useAuthSession } from '@/shared/auth/session';
 import {
   buildReviewSnapshot,
   getCompatibilityTags,
@@ -41,7 +41,7 @@ const EMPTY_CATEGORIES: CategoryWithCount[] = [];
 function Home() {
   const navigate = useNavigate();
   const location = useLocation();
-  const authed = isAuthenticated();
+  const { authed } = useAuthSession();
   const wishlist = useWishlist();
   const compare = useCompare();
 

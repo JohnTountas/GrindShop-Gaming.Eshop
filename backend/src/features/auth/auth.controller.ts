@@ -19,6 +19,13 @@ const COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
+const CLEAR_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+  path: '/',
+};
+
 // Processes user registration and issues initial authentication tokens.
 export const register = asyncHandler(
   async (req: AuthRequest, res: Response, _next: NextFunction) => {
@@ -74,7 +81,7 @@ export const refresh = asyncHandler(
 // Clears refresh-token cookies and completes the logout flow.
 export const logout = asyncHandler(
   async (_req: AuthRequest, res: Response, _next: NextFunction) => {
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', CLEAR_COOKIE_OPTIONS);
     res.json({ message: 'Logged out successfully' });
   }
 );

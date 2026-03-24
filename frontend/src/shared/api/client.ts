@@ -2,6 +2,7 @@
  * Axios API client with token injection and refresh retry handling.
  */
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { clearSession, getAccessToken, setAccessToken } from '@/shared/auth/session';
 
 // Base API URL used by the frontend HTTP client.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -18,7 +19,7 @@ export const api = axios.create({
 // Attaches the access token to outgoing requests when present.
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -32,9 +33,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const token = getAccessToken();
 
-    // If error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Only refresh when the user still has an active local session.
+    if (error.response?.status === 401 && token && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -46,7 +48,7 @@ api.interceptors.response.use(
         );
 
         const { accessToken } = response.data;
-        localStorage.setItem('accessToken', accessToken);
+        setAccessToken(accessToken);
 
         // Retry original request with new token
         if (originalRequest.headers) {
@@ -55,7 +57,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear auth and redirect to login
-        localStorage.removeItem('accessToken');
+        clearSession();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

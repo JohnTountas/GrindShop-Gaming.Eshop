@@ -1,10 +1,10 @@
-import { isAuthenticated } from '@/shared/auth/session';
+import { useAuthSession } from '@/shared/auth/session';
 import { defaultStorefrontState } from '../constants';
 import type { StorefrontToggleResult } from '../types';
 import { useAuthenticatedWishlist } from '../auth/hooks/useAuthenticatedWishlist';
 
 export function useWishlist() {
-  const authed = isAuthenticated();
+  const { authed } = useAuthSession();
   const authenticatedWishlist = useAuthenticatedWishlist(authed);
 
   if (!authed) {

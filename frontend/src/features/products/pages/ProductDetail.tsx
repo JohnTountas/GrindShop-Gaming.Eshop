@@ -6,7 +6,7 @@ import type { MouseEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getApiErrorMessage } from '@/shared/api/error';
 import { addGuestCartItem } from '@/shared/cart/guestCart';
-import { isAuthenticated } from '@/shared/auth/session';
+import { useAuthSession } from '@/shared/auth/session';
 import {
   buildTechnicalSpecs,
   getCompatibilityTags,
@@ -36,7 +36,7 @@ function ProductDetail() {
   const navigate = useNavigate();
   const wishlist = useWishlist();
   const compare = useCompare();
-  const authed = isAuthenticated();
+  const { authed } = useAuthSession();
 
   const [status, setStatus] = useState('');
   const [pendingAction, setPendingAction] = useState<'add' | 'buy' | null>(null);

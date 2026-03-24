@@ -1,10 +1,10 @@
-import { isAuthenticated } from '@/shared/auth/session';
+import { useAuthSession } from '@/shared/auth/session';
 import { useAuthenticatedCompare } from '../auth/hooks/useAuthenticatedCompare';
 import { useGuestCompare } from '../guest/hooks/useGuestCompare';
 import { useCompareSessionCleanup } from './useCompareSessionCleanup';
 
 export function useCompare() {
-  const authed = isAuthenticated();
+  const { authed } = useAuthSession();
   const authenticatedCompare = useAuthenticatedCompare(authed);
   const guestCompare = useGuestCompare(!authed);
   const activeCompare = authed ? authenticatedCompare : guestCompare;
